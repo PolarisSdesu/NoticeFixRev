@@ -119,13 +119,6 @@ fun AppListScreen(
                     style = MaterialTheme.typography.titleMedium,
                 )
             }
-
-            Spacer(Modifier.height(6.dp))
-            Text(
-                stringResource(R.string.pack_source),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
 
         Spacer(Modifier.height(12.dp))

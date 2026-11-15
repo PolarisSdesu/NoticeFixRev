@@ -2,6 +2,8 @@ package com.xeasy.noticefixrev.module
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.xeasy.noticefixrev.data.PrefKeys
 import io.github.libxposed.api.XposedModule
@@ -29,8 +31,17 @@ class ConfigSnapshot private constructor(
     companion object {
         private const val TAG = "NoticeFixRev"
 
+        /** Preference writes land one key at a time; wait for the burst to finish. */
+        private const val RELOAD_DEBOUNCE_MS = 250L
+
         @Volatile
         private var current = ConfigSnapshot(false, emptySet(), emptyMap(), emptyMap())
+
+        /** Fingerprint of the values the current snapshot was built from. */
+        @Volatile
+        private var lastFingerprint: String? = null
+
+        private val handler by lazy { Handler(Looper.getMainLooper()) }
 
         fun get(): ConfigSnapshot = current
 
@@ -39,11 +50,25 @@ class ConfigSnapshot private constructor(
             runCatching {
                 module.getRemotePreferences(PrefKeys.GROUP)
                     .registerOnSharedPreferenceChangeListener { _, _ ->
-                        module.log(Log.INFO, TAG, "config changed, reloading")
-                        reload(module)
+                        scheduleReload(module)
                     }
             }.onFailure {
                 module.log(Log.WARN, TAG, "cannot observe remote preferences", it)
+            }
+        }
+
+        /**
+         * One commit touches several keys and each key fires the listener, so a naive
+         * reload re-reads every icon file a dozen times per change. Coalesce the burst:
+         * only the last event within the debounce window actually rebuilds the snapshot.
+         */
+        private fun scheduleReload(module: XposedModule) {
+            runCatching {
+                handler.removeCallbacksAndMessages(null)
+                handler.postDelayed({ reload(module) }, RELOAD_DEBOUNCE_MS)
+            }.onFailure {
+                // No main looper (should not happen inside SystemUI) — reload inline.
+                reload(module)
             }
         }
 
@@ -54,6 +79,17 @@ class ConfigSnapshot private constructor(
                 val apps = prefs.getStringSet(PrefKeys.ENABLED_APPS, emptySet())
                     ?.toSet()
                     .orEmpty()
+                val revision = prefs.getInt(PrefKeys.ICON_REVISION, -1)
+                val colorsRaw = prefs.getString(PrefKeys.ICON_COLORS, null)
+
+                // Debouncing collapses the burst; this also swallows late duplicates.
+                val fingerprint = buildString {
+                    append(master).append('|').append(revision).append('|')
+                    append(apps.sorted().joinToString(",")).append('|')
+                    append(colorsRaw.orEmpty())
+                }
+                if (fingerprint == lastFingerprint) return
+                lastFingerprint = fingerprint
 
                 val icons = buildMap {
                     if (master) {
@@ -63,9 +99,10 @@ class ConfigSnapshot private constructor(
                     }
                 }
 
-                val colors = parseColors(prefs.getString(PrefKeys.ICON_COLORS, null))
+                val colors = parseColors(colorsRaw)
 
                 current = ConfigSnapshot(master, apps, icons, colors)
+                module.log(Log.INFO, TAG, "config loaded: ${apps.size} apps, ${icons.size} icons")
             } catch (t: Throwable) {
                 module.log(Log.ERROR, TAG, "failed to read config", t)
             }

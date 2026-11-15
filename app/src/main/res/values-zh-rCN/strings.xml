@@ -40,6 +40,10 @@
     <string name="request_scope">申请 SystemUI 作用域</string>
     <string name="reboot_hint">修改作用域后需要重启 SystemUI 或重启设备。</string>
 
+    <string name="section_icon_pack">图标包</string>
+    <string name="info_pack_entries">条目数</string>
+    <string name="info_pack_matched">已安装匹配</string>
+
     <string name="section_about">关于</string>
     <string name="about_body">Notice Fix Rev 1.0.0\n基于 libxposed API 101、Kotlin 与 Jetpack Compose 重写的次世代通知图标修复模块。\n原作 NoticeFix 由 xudazhu1 编写；图标来自 fankes 的 AndroidNotifyIconAdapt（AGPL-3.0）。</string>
     <string name="about_license">开源许可</string>

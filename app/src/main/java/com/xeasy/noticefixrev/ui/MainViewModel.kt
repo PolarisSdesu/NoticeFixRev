@@ -40,6 +40,8 @@ data class UiState(
     val masterEnabled: Boolean = false,
     val enabledApps: Set<String> = emptySet(),
     val apps: List<AppEntry> = emptyList(),
+    /** Total entries in the bundled icon pack (all three tables merged). */
+    val packTotal: Int = 0,
     val frameworkName: String? = null,
     val frameworkVersion: String? = null,
     val apiVersion: Int? = null,
@@ -73,6 +75,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     masterEnabled = repo.masterEnabled(),
                     enabledApps = repo.enabledApps(),
                     apps = apps,
+                    packTotal = pack.size,
                     frameworkName = repo.frameworkName,
                     frameworkVersion = repo.frameworkVersion,
                     apiVersion = repo.apiVersion,

@@ -80,6 +80,27 @@ fun SettingsScreen(
             }
         }
 
+        item { SectionLabel(stringResource(R.string.section_icon_pack)) }
+        item {
+            SettingsCard {
+                SettingsInfoRow(
+                    stringResource(R.string.info_pack_entries),
+                    state.packTotal.toString(),
+                )
+                SettingsInfoRow(
+                    stringResource(R.string.info_pack_matched),
+                    state.apps.size.toString(),
+                )
+                Column(Modifier.padding(horizontal = 16.dp).padding(top = 4.dp, bottom = 14.dp)) {
+                    Text(
+                        stringResource(R.string.pack_source),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
         item { SectionLabel(stringResource(R.string.section_about)) }
         item {
             SettingsCard {
