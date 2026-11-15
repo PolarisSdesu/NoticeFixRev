@@ -1,11 +1,17 @@
 package moe.gbxin.noticefixrev
 
 import android.app.Application
+import android.content.Context
 import io.github.libxposed.service.XposedService
 import io.github.libxposed.service.XposedServiceHelper
 import java.util.concurrent.CopyOnWriteArraySet
+import moe.gbxin.noticefixrev.util.localizedContext
 
 class NoticeFixRevApp : Application(), XposedServiceHelper.OnServiceListener {
+
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(localizedContext(base))
+    }
 
     override fun onCreate() {
         super.onCreate()

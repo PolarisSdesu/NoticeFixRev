@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Notice Fix Rev</string>
-
     <string name="tab_apps">Apps</string>
     <string name="tab_pack">Icon pack</string>
     <string name="tab_settings">Settings</string>
-
     <string name="section_fix">Icon fix</string>
     <string name="master_enabled">Notification icon fix</string>
     <string name="pack_summary">Icon pack covers %1$d installed apps</string>
@@ -19,19 +17,16 @@
     <string name="search_no_result">No matching app</string>
     <string name="action_back">Back</string>
     <string name="action_search">Search</string>
+    <string name="action_close">Close</string>
     <string name="search_hint">Search apps</string>
-
     <string name="service_unavailable">LSPosed service not connected</string>
     <string name="service_unavailable_desc">Enable the module in LSPosed and grant the com.android.systemui scope.</string>
-
     <string name="icon_section">Per-app fix</string>
     <string name="icon_supporting">Replace the notification icon of %1$s with the pack glyph.</string>
     <string name="action_use_pack">Use pack icon</string>
     <string name="action_reset_icon">Restore app icon</string>
-
     <string name="scope_ok">Scope added. Restart SystemUI to apply.</string>
     <string name="scope_failed">Scope request failed: %1$s</string>
-
     <string name="section_framework">Framework</string>
     <string name="info_framework">Framework</string>
     <string name="info_version">Version</string>
@@ -41,16 +36,21 @@
     <string name="value_none">—</string>
     <string name="value_connected">Connected</string>
     <string name="value_disconnected">Disconnected</string>
-
     <string name="section_scope">Scope</string>
     <string name="request_scope">Request SystemUI scope</string>
     <string name="reboot_hint">Restart SystemUI or the device after changing the scope.</string>
-
     <string name="section_icon_pack">Icon pack</string>
     <string name="info_pack_entries">Entries</string>
     <string name="info_pack_matched">Installed matches</string>
-
+    <string name="section_language">Language</string>
+    <string name="language_title">App language</string>
+    <string name="language_dialog_title">Choose language</string>
+    <string name="language_system">Follow system</string>
+    <string name="language_english">English</string>
+    <string name="language_zh_cn">简体中文</string>
+    <string name="language_zh_tw">繁體中文</string>
+    <string name="language_ja">日本語</string>
     <string name="section_about">About</string>
-    <string name="about_body">Notice Fix Rev 1.0.0\nA next-generation notification icon fix built with libxposed API 101, Kotlin and Jetpack Compose.\nBased on NoticeFix by xudazhu1 (AGPL-3.0).</string>
-    <string name="about_license">License</string>
+    <string name="about_body">Notice Fix Rev 1.0.0\nA next-generation notification icon fix built with libxposed API 101, Kotlin and Jetpack Compose.\nBased on NoticeFix by xudazhu1; icons from AndroidNotifyIconAdapt by fankes (AGPL-3.0).</string>
+    <string name="license_title">License</string>
 </resources>

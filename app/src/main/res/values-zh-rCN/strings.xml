@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Notice Fix Rev</string>
-
     <string name="tab_apps">应用</string>
     <string name="tab_pack">图标包</string>
     <string name="tab_settings">设置</string>
-
     <string name="section_fix">图标修复</string>
     <string name="master_enabled">通知图标修复</string>
     <string name="pack_summary">图标包覆盖 %1$d 个已安装应用</string>
@@ -19,19 +17,16 @@
     <string name="search_no_result">没有匹配的应用</string>
     <string name="action_back">返回</string>
     <string name="action_search">搜索</string>
+    <string name="action_close">关闭</string>
     <string name="search_hint">搜索应用</string>
-
     <string name="service_unavailable">未连接到 LSPosed 服务</string>
     <string name="service_unavailable_desc">请确认模块已在 LSPosed 中启用，并授予 com.android.systemui 作用域。</string>
-
     <string name="icon_section">对此应用生效</string>
     <string name="icon_supporting">用图标包中的图标替换 %1$s 的通知图标。</string>
     <string name="action_use_pack">使用图标包</string>
     <string name="action_reset_icon">恢复应用图标</string>
-
     <string name="scope_ok">作用域已添加，重启 SystemUI 后生效。</string>
     <string name="scope_failed">作用域申请失败：%1$s</string>
-
     <string name="section_framework">框架</string>
     <string name="info_framework">框架</string>
     <string name="info_version">版本</string>
@@ -41,16 +36,21 @@
     <string name="value_none">—</string>
     <string name="value_connected">已连接</string>
     <string name="value_disconnected">未连接</string>
-
     <string name="section_scope">作用域</string>
     <string name="request_scope">申请 SystemUI 作用域</string>
     <string name="reboot_hint">修改作用域后需要重启 SystemUI 或重启设备。</string>
-
     <string name="section_icon_pack">图标包</string>
     <string name="info_pack_entries">条目数</string>
     <string name="info_pack_matched">已安装匹配</string>
-
+    <string name="section_language">语言</string>
+    <string name="language_title">应用语言</string>
+    <string name="language_dialog_title">选择语言</string>
+    <string name="language_system">跟随系统</string>
+    <string name="language_english">English</string>
+    <string name="language_zh_cn">简体中文</string>
+    <string name="language_zh_tw">繁體中文</string>
+    <string name="language_ja">日本語</string>
     <string name="section_about">关于</string>
-    <string name="about_body">Notice Fix Rev 1.0.0\n基于 libxposed API 101、Kotlin 与 Jetpack Compose 重写的次世代通知图标修复模块。\n原作 NoticeFix 由 xudazhu1 编写（AGPL-3.0）。</string>
-    <string name="about_license">开源许可</string>
+    <string name="about_body">Notice Fix Rev 1.0.0\n基于 libxposed API 101、Kotlin 与 Jetpack Compose 重写的次世代通知图标修复模块。\n原作 NoticeFix 由 xudazhu1 编写；图标来自 fankes 的 AndroidNotifyIconAdapt（AGPL-3.0）。</string>
+    <string name="license_title">开源许可</string>
 </resources>
