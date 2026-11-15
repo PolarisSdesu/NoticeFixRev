@@ -7,18 +7,23 @@
 
     <string name="section_fix">Icon fix</string>
     <string name="master_enabled">Notification icon fix</string>
-    <string name="master_enabled_desc">Master switch. When off, no app is patched.</string>
+    <string name="pack_summary">Icon pack matches %1$d installed apps</string>
+    <string name="pack_source">Icons from AndroidNotifyIconAdapt by fankes (AGPL-3.0)</string>
+    <string name="pack_reapply">Re-apply</string>
+    <string name="pack_entry">Adapted by the icon pack</string>
+    <string name="pack_missing">No icon pack entry</string>
+    <string name="pack_applied">Applied the icon pack to %1$d apps</string>
     <string name="search_hint">Search apps</string>
 
     <string name="service_unavailable">LSPosed service not connected</string>
     <string name="service_unavailable_desc">Enable the module in LSPosed and grant the com.android.systemui scope.</string>
 
     <string name="icon_section">Per-app fix</string>
-    <string name="icon_none">Using the system icon</string>
-    <string name="icon_custom">Using a custom icon</string>
-    <string name="action_choose_icon">Choose image</string>
+    <string name="icon_custom">Using a custom image</string>
+    <string name="action_use_pack">Use pack icon</string>
+    <string name="action_choose_icon">Pick image</string>
     <string name="action_reset_icon">Reset</string>
-    <string name="choose_icon_hint">Picking an image also enables the fix for this app.</string>
+    <string name="choose_icon_hint">The pack icon applies automatically; picking an image overrides it.</string>
 
     <string name="saved_failed">Could not save the icon. Try another image.</string>
     <string name="scope_ok">Scope added. Restart SystemUI to apply.</string>
@@ -39,6 +44,6 @@
     <string name="reboot_hint">Restart SystemUI or the device after changing the scope.</string>
 
     <string name="section_about">About</string>
-    <string name="about_body">Notice Fix Rev 1.0.0\nA next-generation notification icon fix built with libxposed API 101, Kotlin and Jetpack Compose.\nBased on NoticeFix by xudazhu1 (AGPL-3.0).</string>
+    <string name="about_body">Notice Fix Rev 1.0.0\nA next-generation notification icon fix built with libxposed API 101, Kotlin and Jetpack Compose.\nBased on NoticeFix by xudazhu1; icons from AndroidNotifyIconAdapt by fankes (AGPL-3.0).</string>
     <string name="about_license">License</string>
 </resources>

@@ -11,6 +11,17 @@ object PrefKeys {
     const val MASTER_ENABLED = "master_enabled"
     const val ENABLED_APPS = "enabled_apps"
 
+    /**
+     * Tint written next to each icon as `package|argbHex`, one per line.
+     *
+     * The icon pack ships white silhouettes plus a brand colour; the hook mirrors the
+     * original NoticeFix and sets `Notification.color` so SystemUI tints the glyph.
+     */
+    const val ICON_COLORS = "icon_colors"
+
+    /** Set once the bundled icon pack has been applied to every installed match. */
+    const val PACK_SEEDED = "pack_seeded"
+
     /** Bumped whenever an icon file is rewritten, so readers know to refresh. */
     const val ICON_REVISION = "icon_revision"
 

@@ -27,9 +27,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.AddPhotoAlternate
-import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Undo
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -40,6 +40,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -69,8 +70,10 @@ import kotlinx.coroutines.withContext
 fun AppListScreen(
     state: UiState,
     onRefresh: () -> Unit,
+    onReapplyPack: () -> Unit,
     onToggleMaster: (Boolean) -> Unit,
     onToggleApp: (String, Boolean) -> Unit,
+    onUsePackIcon: (String) -> Unit,
     onSaveIcon: (String, Uri) -> Unit,
     onResetIcon: (String) -> Unit,
     loadPreview: suspend (String) -> ImageBitmap?,
@@ -106,12 +109,26 @@ fun AppListScreen(
             SectionLabel(stringResource(R.string.section_fix))
             SettingsCard {
                 SettingsSwitchRow(
-                    icon = Icons.Outlined.NotificationsActive,
+                    icon = Icons.Outlined.Palette,
                     title = stringResource(R.string.master_enabled),
                     checked = state.masterEnabled,
-                    supporting = stringResource(R.string.master_enabled_desc),
+                    supporting = stringResource(R.string.pack_summary, state.packInstalled),
                     onToggle = { onToggleMaster(!state.masterEnabled) },
                 )
+                Row(
+                    Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        stringResource(R.string.pack_source),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(onClick = onReapplyPack, enabled = state.serviceAvailable) {
+                        Text(stringResource(R.string.pack_reapply))
+                    }
+                }
             }
         }
 
@@ -168,6 +185,7 @@ fun AppListScreen(
                 iconRevision = state.iconRevision,
                 loadPreview = loadPreview,
                 onToggle = { onToggleApp(sheet.packageName, it) },
+                onUsePack = { onUsePackIcon(sheet.packageName) },
                 onPick = {
                     pendingPackage = sheet.packageName
                     picker.launch("image/*")
@@ -279,11 +297,7 @@ private fun AppCard(
                 .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Image(
-                bitmap = app.icon,
-                contentDescription = null,
-                modifier = Modifier.size(40.dp).clip(CircleShape),
-            )
+            AppIcon(app = app, size = 40)
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
                 Text(
@@ -294,16 +308,54 @@ private fun AppCard(
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    app.packageName,
+                    if (app.adapted) {
+                        stringResource(R.string.pack_entry)
+                    } else {
+                        stringResource(R.string.pack_missing)
+                    },
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (app.adapted) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
             Spacer(Modifier.width(12.dp))
-            Switch(checked = enabled, onCheckedChange = onToggle)
+            Switch(checked = enabled, onCheckedChange = onToggle, enabled = app.adapted || enabled)
         }
+    }
+}
+
+/**
+ * Pack glyphs are white silhouettes, so they get a tinted circle behind them; fall back
+ * to the app's own launcher icon when the pack has no entry.
+ */
+@Composable
+private fun AppIcon(app: AppEntry, size: Int) {
+    val pack = app.packIcon
+    if (pack == null) {
+        Image(
+            bitmap = app.icon,
+            contentDescription = null,
+            modifier = Modifier.size(size.dp).clip(CircleShape),
+        )
+        return
+    }
+    Box(
+        Modifier
+            .size(size.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primaryContainer),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            bitmap = pack,
+            contentDescription = null,
+            modifier = Modifier.size((size * 0.62f).dp),
+        )
     }
 }
 
@@ -314,10 +366,11 @@ private fun AppDetailSheet(
     iconRevision: Int,
     loadPreview: suspend (String) -> ImageBitmap?,
     onToggle: (Boolean) -> Unit,
+    onUsePack: () -> Unit,
     onPick: () -> Unit,
     onReset: () -> Unit,
 ) {
-    val preview by produceState<ImageBitmap?>(initialValue = null, app.packageName, iconRevision) {
+    val applied by produceState<ImageBitmap?>(initialValue = null, app.packageName, iconRevision) {
         value = withContext(Dispatchers.IO) { loadPreview(app.packageName) }
     }
 
@@ -332,21 +385,21 @@ private fun AppDetailSheet(
             Modifier
                 .size(96.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center,
         ) {
-            val previewBitmap = preview
-            if (previewBitmap != null) {
+            val preview = applied ?: app.packIcon
+            if (preview != null) {
                 Image(
-                    bitmap = previewBitmap,
+                    bitmap = preview,
                     contentDescription = null,
-                    modifier = Modifier.size(72.dp),
+                    modifier = Modifier.size(56.dp),
                 )
             } else {
                 Image(
                     bitmap = app.icon,
                     contentDescription = null,
-                    modifier = Modifier.size(56.dp),
+                    modifier = Modifier.size(72.dp),
                 )
             }
         }
@@ -363,13 +416,13 @@ private fun AppDetailSheet(
 
         SettingsCard {
             SettingsSwitchRow(
-                icon = Icons.Outlined.NotificationsActive,
+                icon = Icons.Outlined.Palette,
                 title = stringResource(R.string.icon_section),
                 checked = enabled,
-                supporting = if (preview == null) {
-                    stringResource(R.string.icon_none)
-                } else {
-                    stringResource(R.string.icon_custom)
+                supporting = when {
+                    app.adapted -> stringResource(R.string.pack_entry)
+                    applied != null -> stringResource(R.string.icon_custom)
+                    else -> stringResource(R.string.pack_missing)
                 },
                 onToggle = { onToggle(!enabled) },
             )
@@ -378,23 +431,32 @@ private fun AppDetailSheet(
         Spacer(Modifier.height(12.dp))
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilledTonalButton(onClick = onPick, modifier = Modifier.weight(1f)) {
+            FilledTonalButton(
+                onClick = onUsePack,
+                enabled = app.adapted,
+                modifier = Modifier.weight(1f),
+            ) {
+                Icon(Icons.Outlined.Palette, null, Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.action_use_pack))
+            }
+            OutlinedButton(onClick = onPick, modifier = Modifier.weight(1f)) {
                 Icon(Icons.Outlined.AddPhotoAlternate, null, Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.action_choose_icon))
             }
-            OutlinedButton(
-                onClick = onReset,
-                enabled = preview != null,
-                modifier = Modifier.weight(1f),
-            ) {
-                Icon(Icons.Outlined.DeleteOutline, null, Modifier.size(18.dp))
+        }
+
+        if (enabled || applied != null) {
+            TextButton(onClick = onReset) {
+                Icon(Icons.Outlined.Undo, null, Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.action_reset_icon))
             }
+        } else {
+            Spacer(Modifier.height(8.dp))
         }
 
-        Spacer(Modifier.height(8.dp))
         Text(
             stringResource(R.string.choose_icon_hint),
             style = MaterialTheme.typography.labelMedium,

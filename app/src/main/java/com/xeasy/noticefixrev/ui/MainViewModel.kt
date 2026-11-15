@@ -2,6 +2,7 @@ package com.xeasy.noticefixrev.ui
 
 import android.app.Application
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.compose.ui.graphics.ImageBitmap
@@ -9,7 +10,9 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.xeasy.noticefixrev.NoticeFixRevApp
 import com.xeasy.noticefixrev.R
+import com.xeasy.noticefixrev.data.IconPack
 import com.xeasy.noticefixrev.data.ModuleRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,8 +25,13 @@ import kotlinx.coroutines.withContext
 data class AppEntry(
     val packageName: String,
     val label: String,
+    /** The app's own launcher icon. */
     val icon: ImageBitmap,
-)
+    /** Icon-pack glyph, or null when the pack has no entry for this app. */
+    val packIcon: ImageBitmap? = null,
+) {
+    val adapted: Boolean get() = packIcon != null
+}
 
 data class UiState(
     val loading: Boolean = true,
@@ -31,6 +39,7 @@ data class UiState(
     val masterEnabled: Boolean = false,
     val enabledApps: Set<String> = emptySet(),
     val apps: List<AppEntry> = emptyList(),
+    val packInstalled: Int = 0,
     val frameworkName: String? = null,
     val frameworkVersion: String? = null,
     val apiVersion: Int? = null,
@@ -48,12 +57,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val serviceListener: (io.github.libxposed.service.XposedService?) -> Unit = { refresh() }
 
     init {
-        com.xeasy.noticefixrev.NoticeFixRevApp.addServiceListener(serviceListener)
+        NoticeFixRevApp.addServiceListener(serviceListener)
     }
 
     fun refresh() {
         viewModelScope.launch {
-            val apps = withContext(Dispatchers.IO) { loadApps(getApplication()) }
+            val context = getApplication<Application>()
+            val pack = withContext(Dispatchers.IO) { IconPack.load(context) }
+            val apps = withContext(Dispatchers.IO) { loadApps(context, pack) }
+
             _state.update {
                 it.copy(
                     loading = false,
@@ -61,12 +73,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     masterEnabled = repo.masterEnabled(),
                     enabledApps = repo.enabledApps(),
                     apps = apps,
+                    packInstalled = apps.count { app -> app.adapted },
                     frameworkName = repo.frameworkName,
                     frameworkVersion = repo.frameworkVersion,
                     apiVersion = repo.apiVersion,
                     iconRevision = repo.iconRevision(),
                 )
             }
+
+            // First launch after installing the module: adapt every installed app the
+            // pack knows about, so the module works without picking images by hand.
+            seedPackIfNeeded(pack)
         }
     }
 
@@ -77,9 +94,45 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setAppEnabled(pkg: String, enabled: Boolean) {
+        if (enabled) {
+            // Re-enabling a pack app must re-install the pack glyph, not just the flag.
+            val entry = _state.value.apps.firstOrNull { it.packageName == pkg }
+            if (entry?.adapted == true) {
+                usePackIcon(pkg)
+                return
+            }
+        }
         repo.setAppEnabled(pkg, enabled)
         _state.update {
             it.copy(enabledApps = if (enabled) it.enabledApps + pkg else it.enabledApps - pkg)
+        }
+    }
+
+    /** (Re)applies the bundled pack glyph for one app. */
+    fun usePackIcon(pkg: String) {
+        viewModelScope.launch {
+            val icon = withContext(Dispatchers.IO) {
+                IconPack.load(getApplication()).get(pkg)?.takeIf { repo.applyPackIcon(pkg, it) }
+            }
+            if (icon != null) {
+                _state.update {
+                    it.copy(
+                        enabledApps = it.enabledApps + pkg,
+                        iconRevision = repo.iconRevision(),
+                    )
+                }
+            } else {
+                _state.update { it.copy(message = getString(R.string.saved_failed)) }
+            }
+        }
+    }
+
+    /** Applies the pack to every installed app that has an entry (manual re-scan). */
+    fun reapplyPack() {
+        viewModelScope.launch {
+            val applied = withContext(Dispatchers.IO) { applyPack() }
+            refresh()
+            _state.update { it.copy(message = getString(R.string.pack_applied, applied)) }
         }
     }
 
@@ -94,7 +147,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 }
             } else {
-                _state.update { it.copy(message = getApplication<Application>().getString(R.string.saved_failed)) }
+                _state.update { it.copy(message = getString(R.string.saved_failed)) }
             }
         }
     }
@@ -102,7 +155,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun resetIcon(pkg: String) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) { repo.deleteIcon(pkg) }
-            _state.update { it.copy(iconRevision = repo.iconRevision()) }
+            _state.update {
+                it.copy(
+                    enabledApps = it.enabledApps - pkg,
+                    iconRevision = repo.iconRevision(),
+                )
+            }
         }
     }
 
@@ -113,12 +171,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun requestScope() {
         repo.requestScope { ok, reason ->
             val message = if (ok) {
-                getApplication<Application>().getString(R.string.scope_ok)
+                getString(R.string.scope_ok)
             } else {
-                getApplication<Application>().getString(
-                    R.string.scope_failed,
-                    reason ?: getApplication<Application>().getString(R.string.value_none),
-                )
+                getString(R.string.scope_failed, reason ?: getString(R.string.value_none))
             }
             _state.update { it.copy(message = message) }
         }
@@ -129,11 +184,45 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     override fun onCleared() {
-        com.xeasy.noticefixrev.NoticeFixRevApp.removeServiceListener(serviceListener)
+        NoticeFixRevApp.removeServiceListener(serviceListener)
         super.onCleared()
     }
 
-    private fun loadApps(context: Context): List<AppEntry> {
+    private suspend fun seedPackIfNeeded(pack: IconPack) {
+        if (repo.packSeeded() || !repo.isServiceAvailable) return
+        val applied = withContext(Dispatchers.IO) { applyPack() }
+        _state.update {
+            it.copy(
+                masterEnabled = repo.masterEnabled(),
+                enabledApps = repo.enabledApps(),
+                iconRevision = repo.iconRevision(),
+            )
+        }
+        if (applied > 0) repo.requestScope { _, _ -> }
+    }
+
+    /** Applies every installed pack entry; must run on a background thread. */
+    private fun applyPack(): Int {
+        val context = getApplication<Application>()
+        val pack = IconPack.load(context)
+        val targets = context.packageManager.getInstalledApplications(0)
+            .asSequence()
+            .map { it.packageName }
+            .filter { it != context.packageName }
+            .mapNotNull { pkg -> pack.get(pkg)?.let { pkg to it } }
+            .toMap()
+
+        repo.markPackSeeded()
+        if (targets.isEmpty()) return 0
+
+        repo.setMasterEnabled(true)
+        return repo.applyPackIcons(targets)
+    }
+
+    private fun getString(res: Int, vararg args: Any): String =
+        getApplication<Application>().getString(res, *args)
+
+    private fun loadApps(context: Context, pack: IconPack): List<AppEntry> {
         val pm = context.packageManager
         return pm.getInstalledApplications(PackageManager.GET_META_DATA)
             .asSequence()
@@ -142,18 +231,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 AppEntry(
                     packageName = info.packageName,
                     label = pm.getApplicationLabel(info).toString(),
-                    icon = runCatching {
-                        pm.getApplicationIcon(info)
-                            .toBitmap(96, 96)
-                            .asImageBitmap()
-                    }.getOrElse {
-                        android.graphics.Bitmap
-                            .createBitmap(1, 1, android.graphics.Bitmap.Config.ARGB_8888)
-                            .asImageBitmap()
-                    },
+                    icon = loadAppIcon(pm, info),
+                    packIcon = pack.get(info.packageName)?.bitmap()?.asImageBitmap(),
                 )
             }
-            .sortedBy { it.label.lowercase() }
+            .sortedWith(compareBy({ !it.adapted }, { it.label.lowercase() }))
             .toList()
     }
+
+    private fun loadAppIcon(pm: PackageManager, info: ApplicationInfo): ImageBitmap =
+        runCatching {
+            pm.getApplicationIcon(info).toBitmap(96, 96).asImageBitmap()
+        }.getOrElse {
+            android.graphics.Bitmap
+                .createBitmap(1, 1, android.graphics.Bitmap.Config.ARGB_8888)
+                .asImageBitmap()
+        }
 }

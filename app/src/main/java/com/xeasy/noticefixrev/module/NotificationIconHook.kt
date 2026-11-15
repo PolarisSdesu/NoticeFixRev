@@ -75,6 +75,9 @@ internal class NotificationIconHook(private val module: XposedModule) {
             smallIconField?.set(notification, icon)
                 ?: smallIconSetter?.invoke(notification, icon)
                 ?: error("Notification#mSmallIcon is not reachable")
+            // Pack glyphs are white silhouettes; hand SystemUI the brand tint exactly
+            // like the original NoticeFix does via `notification.color`.
+            config.colorFor(pkg)?.let { notification.color = it }
         }.onFailure {
             module.log(Log.WARN, ModuleEntry.TAG, "cannot patch icon of $pkg", it)
         }

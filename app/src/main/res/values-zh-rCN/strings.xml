@@ -7,18 +7,23 @@
 
     <string name="section_fix">图标修复</string>
     <string name="master_enabled">通知图标修复</string>
-    <string name="master_enabled_desc">总开关。关闭后不再对任何应用生效。</string>
+    <string name="pack_summary">图标包已适配 %1$d 个已安装应用</string>
+    <string name="pack_source">图标来自 fankes 的 AndroidNotifyIconAdapt（AGPL-3.0）</string>
+    <string name="pack_reapply">重新应用</string>
+    <string name="pack_entry">已适配图标包</string>
+    <string name="pack_missing">图标包暂无此应用</string>
+    <string name="pack_applied">已为 %1$d 个应用应用图标包</string>
     <string name="search_hint">搜索应用</string>
 
     <string name="service_unavailable">未连接到 LSPosed 服务</string>
     <string name="service_unavailable_desc">请确认模块已在 LSPosed 中启用，并授予 com.android.systemui 作用域。</string>
 
     <string name="icon_section">对此应用生效</string>
-    <string name="icon_none">正在使用系统图标</string>
-    <string name="icon_custom">正在使用自定义图标</string>
-    <string name="action_choose_icon">选择图片</string>
-    <string name="action_reset_icon">恢复默认</string>
-    <string name="choose_icon_hint">选择图片后会自动启用该应用的修复。</string>
+    <string name="icon_custom">正在使用自定义图片</string>
+    <string name="action_use_pack">使用图标包</string>
+    <string name="action_choose_icon">自选图片</string>
+    <string name="action_reset_icon">恢复应用图标</string>
+    <string name="choose_icon_hint">图标包图标会自动生效；自选图片会覆盖图标包。</string>
 
     <string name="saved_failed">图标保存失败，请换一张图片试试。</string>
     <string name="scope_ok">作用域已添加，重启 SystemUI 后生效。</string>
@@ -39,6 +44,6 @@
     <string name="reboot_hint">修改作用域后需要重启 SystemUI 或重启设备。</string>
 
     <string name="section_about">关于</string>
-    <string name="about_body">Notice Fix Rev 1.0.0\n基于 libxposed API 101、Kotlin 与 Jetpack Compose 重写的次世代通知图标修复模块。\n原作 NoticeFix 由 xudazhu1 编写（AGPL-3.0）。</string>
+    <string name="about_body">Notice Fix Rev 1.0.0\n基于 libxposed API 101、Kotlin 与 Jetpack Compose 重写的次世代通知图标修复模块。\n原作 NoticeFix 由 xudazhu1 编写；图标来自 fankes 的 AndroidNotifyIconAdapt（AGPL-3.0）。</string>
     <string name="about_license">开源许可</string>
 </resources>

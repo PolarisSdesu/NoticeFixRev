@@ -17,16 +17,20 @@ class ConfigSnapshot private constructor(
     val masterEnabled: Boolean,
     val enabledApps: Set<String>,
     private val icons: Map<String, Bitmap>,
+    private val colors: Map<String, Int>,
 ) {
     fun shouldPatch(pkg: String): Boolean = masterEnabled && pkg in enabledApps
 
     fun iconFor(pkg: String): Bitmap? = icons[pkg]
 
+    /** Brand tint for the pack icon, or null to leave `Notification.color` alone. */
+    fun colorFor(pkg: String): Int? = colors[pkg]
+
     companion object {
         private const val TAG = "NoticeFixRev"
 
         @Volatile
-        private var current = ConfigSnapshot(false, emptySet(), emptyMap())
+        private var current = ConfigSnapshot(false, emptySet(), emptyMap(), emptyMap())
 
         fun get(): ConfigSnapshot = current
 
@@ -59,11 +63,26 @@ class ConfigSnapshot private constructor(
                     }
                 }
 
-                current = ConfigSnapshot(master, apps, icons)
+                val colors = parseColors(prefs.getString(PrefKeys.ICON_COLORS, null))
+
+                current = ConfigSnapshot(master, apps, icons, colors)
             } catch (t: Throwable) {
                 module.log(Log.ERROR, TAG, "failed to read config", t)
             }
         }
+
+        /** Mirrors `ModuleRepository.encodeColors`: `package|argbHex` lines. */
+        private fun parseColors(raw: String?): Map<String, Int> =
+            raw.orEmpty()
+                .lineSequence()
+                .mapNotNull { line ->
+                    val split = line.lastIndexOf('|')
+                    if (split <= 0) return@mapNotNull null
+                    val color = line.substring(split + 1).toUIntOrNull(16)?.toInt()
+                        ?: return@mapNotNull null
+                    line.substring(0, split) to color
+                }
+                .toMap()
 
         private fun loadIcon(module: XposedModule, pkg: String): Bitmap? = try {
             module.openRemoteFile(PrefKeys.iconFile(pkg)).use { descriptor ->
