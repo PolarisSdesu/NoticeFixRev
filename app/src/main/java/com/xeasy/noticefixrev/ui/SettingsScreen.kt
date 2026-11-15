@@ -1,5 +1,6 @@
 package com.xeasy.noticefixrev.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -103,24 +104,26 @@ fun SettingsScreen(
 
         item { SectionLabel(stringResource(R.string.section_about)) }
         item {
-            SettingsCard {
-                Column(Modifier.padding(16.dp)) {
-                    Text(
-                        stringResource(R.string.about_body),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+            // Two cards in one item, spaced explicitly — otherwise LazyColumn stacks
+            // them flush against each other.
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SettingsCard {
+                    Column(Modifier.padding(16.dp)) {
+                        Text(
+                            stringResource(R.string.about_body),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                SettingsCard {
+                    SettingsActionRow(
+                        icon = Icons.Outlined.Info,
+                        title = stringResource(R.string.about_license),
+                        supporting = "AGPL-3.0 · NoticeFix by xudazhu1",
+                        onClick = { },
                     )
                 }
-            }
-        }
-        item {
-            SettingsCard {
-                SettingsActionRow(
-                    icon = Icons.Outlined.Info,
-                    title = stringResource(R.string.about_license),
-                    supporting = "AGPL-3.0 · NoticeFix by xudazhu1",
-                    onClick = { },
-                )
             }
         }
     }

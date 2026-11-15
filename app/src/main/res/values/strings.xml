@@ -45,6 +45,6 @@
     <string name="info_pack_matched">Installed matches</string>
 
     <string name="section_about">About</string>
-    <string name="about_body">Notice Fix Rev 1.0.0\nA next-generation notification icon fix built with libxposed API 101, Kotlin and Jetpack Compose.\nBased on NoticeFix by xudazhu1; icons from AndroidNotifyIconAdapt by fankes (AGPL-3.0).</string>
+    <string name="about_body">Notice Fix Rev 1.0.0\nA next-generation notification icon fix built with libxposed API 101, Kotlin and Jetpack Compose.\nBased on NoticeFix by xudazhu1 (AGPL-3.0).</string>
     <string name="about_license">License</string>
 </resources>

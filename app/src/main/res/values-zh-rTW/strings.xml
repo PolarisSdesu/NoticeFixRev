@@ -45,6 +45,6 @@
     <string name="info_pack_matched">已安裝匹配</string>
 
     <string name="section_about">關於</string>
-    <string name="about_body">Notice Fix Rev 1.0.0\n基於 libxposed API 101、Kotlin 與 Jetpack Compose 重寫的次世代通知圖示修復模組。\n原作 NoticeFix 由 xudazhu1 撰寫；圖示來自 fankes 的 AndroidNotifyIconAdapt（AGPL-3.0）。</string>
+    <string name="about_body">Notice Fix Rev 1.0.0\n基於 libxposed API 101、Kotlin 與 Jetpack Compose 重寫的次世代通知圖示修復模組。\n原作 NoticeFix 由 xudazhu1 撰寫（AGPL-3.0）。</string>
     <string name="about_license">開源授權</string>
 </resources>
