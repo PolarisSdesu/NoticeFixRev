@@ -4,12 +4,14 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -44,10 +46,20 @@ private enum class Tab(val labelRes: Int, val icon: ImageVector) {
 fun AppRoot(viewModel: MainViewModel = viewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var tab by remember { mutableStateOf(Tab.Apps) }
+    var searching by remember { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     LaunchedEffect(Unit) { viewModel.refresh() }
+
+    if (searching) {
+        AppSearchScreen(
+            state = state,
+            onToggleApp = viewModel::setAppEnabled,
+            onBack = { searching = false },
+        )
+        return
+    }
 
     state.message?.let { message ->
         LaunchedEffect(message) {
@@ -80,6 +92,16 @@ fun AppRoot(viewModel: MainViewModel = viewModel()) {
                     scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
                 ),
                 scrollBehavior = scrollBehavior,
+                actions = {
+                    if (tab == Tab.Apps) {
+                        IconButton(onClick = { searching = true }) {
+                            Icon(
+                                Icons.Filled.Search,
+                                contentDescription = stringResource(R.string.action_search),
+                            )
+                        }
+                    }
+                },
             )
         },
         bottomBar = {
@@ -100,7 +122,6 @@ fun AppRoot(viewModel: MainViewModel = viewModel()) {
         when (tab) {
             Tab.Apps -> AppListScreen(
                 state = state,
-                onRefresh = viewModel::refresh,
                 onApplyAll = viewModel::applyAll,
                 onToggleMaster = viewModel::setMasterEnabled,
                 onToggleApp = viewModel::setAppEnabled,
@@ -112,7 +133,6 @@ fun AppRoot(viewModel: MainViewModel = viewModel()) {
 
             Tab.Pack -> IconPackScreen(
                 state = state,
-                onToggleApp = viewModel::setAppEnabled,
                 loadBitmap = viewModel::packBitmap,
                 contentPadding = padding,
             )

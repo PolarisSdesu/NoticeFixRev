@@ -15,9 +15,10 @@
     <string name="apply_failed">圖示套用失敗，請確認 LSPosed 服務已連線後重試。</string>
     <string name="action_apply_all">一鍵套用（%1$d）</string>
     <string name="pack_search_hint">搜尋圖示包</string>
-    <string name="pack_tap_hint">點按已安裝應用的圖示即可套用</string>
     <string name="pack_no_result">沒有匹配的圖示</string>
     <string name="search_no_result">沒有匹配的應用</string>
+    <string name="action_back">返回</string>
+    <string name="action_search">搜尋</string>
     <string name="search_hint">搜尋應用</string>
 
     <string name="service_unavailable">未連線到 LSPosed 服務</string>

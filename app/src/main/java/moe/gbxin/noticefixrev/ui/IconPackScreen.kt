@@ -2,8 +2,6 @@ package moe.gbxin.noticefixrev.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,7 +47,6 @@ import kotlinx.coroutines.withContext
 @Composable
 fun IconPackScreen(
     state: UiState,
-    onToggleApp: (String, Boolean) -> Unit,
     loadBitmap: suspend (String) -> ImageBitmap?,
     contentPadding: PaddingValues,
 ) {
@@ -76,13 +73,6 @@ fun IconPackScreen(
 
         Spacer(Modifier.height(8.dp))
 
-        Text(
-            stringResource(R.string.pack_tap_hint),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
-        )
-
         if (filtered.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
                 Text(
@@ -107,12 +97,7 @@ fun IconPackScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             items(filtered, key = { it.packageName }) { item ->
-                PackCell(
-                    item = item,
-                    enabled = item.packageName in state.enabledApps,
-                    loadBitmap = loadBitmap,
-                    onToggle = { onToggleApp(item.packageName, it) },
-                )
+                PackCell(item = item, loadBitmap = loadBitmap)
             }
         }
     }
@@ -121,9 +106,7 @@ fun IconPackScreen(
 @Composable
 private fun PackCell(
     item: PackItemUi,
-    enabled: Boolean,
     loadBitmap: suspend (String) -> ImageBitmap?,
-    onToggle: (Boolean) -> Unit,
 ) {
     val bitmap by produceState<ImageBitmap?>(initialValue = null, item.packageName) {
         value = withContext(Dispatchers.IO) { loadBitmap(item.packageName) }
@@ -132,31 +115,14 @@ private fun PackCell(
     val glyph = ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer)
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .clickable(enabled = item.installed) { onToggle(!enabled) }
-            .padding(vertical = 6.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
             Modifier
                 .size(56.dp)
                 .clip(CircleShape)
-                .background(
-                    if (enabled) {
-                        MaterialTheme.colorScheme.primaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerHigh
-                    },
-                )
-                .then(
-                    if (enabled) {
-                        Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                    } else {
-                        Modifier
-                    },
-                ),
+                .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center,
         ) {
             val image = bitmap

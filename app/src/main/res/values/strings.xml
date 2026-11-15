@@ -15,9 +15,10 @@
     <string name="apply_failed">Could not apply the icon. Check the LSPosed service and retry.</string>
     <string name="action_apply_all">Apply to all (%1$d)</string>
     <string name="pack_search_hint">Search icon pack</string>
-    <string name="pack_tap_hint">Tap an installed app\'s icon to apply it</string>
     <string name="pack_no_result">No matching icon</string>
     <string name="search_no_result">No matching app</string>
+    <string name="action_back">Back</string>
+    <string name="action_search">Search</string>
     <string name="search_hint">Search apps</string>
 
     <string name="service_unavailable">LSPosed service not connected</string>

@@ -48,7 +48,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import moe.gbxin.noticefixrev.R
 import moe.gbxin.noticefixrev.ui.components.NoticeLoading
-import moe.gbxin.noticefixrev.ui.components.NoticeSearchField
 import moe.gbxin.noticefixrev.ui.components.SectionLabel
 import moe.gbxin.noticefixrev.ui.components.SettingsCard
 import moe.gbxin.noticefixrev.ui.components.SettingsSwitchRow
@@ -65,7 +64,6 @@ import kotlinx.coroutines.withContext
 @Composable
 fun AppListScreen(
     state: UiState,
-    onRefresh: () -> Unit,
     onApplyAll: () -> Unit,
     onToggleMaster: (Boolean) -> Unit,
     onToggleApp: (String, Boolean) -> Unit,
@@ -74,19 +72,7 @@ fun AppListScreen(
     loadAppliedIcon: suspend (String) -> ImageBitmap?,
     contentPadding: PaddingValues,
 ) {
-    var query by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf<AppEntry?>(null) }
-
-    val filtered = remember(state.apps, query) {
-        if (query.isBlank()) {
-            state.apps
-        } else {
-            state.apps.filter {
-                it.label.contains(query, ignoreCase = true) ||
-                    it.packageName.contains(query, ignoreCase = true)
-            }
-        }
-    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(contentPadding),
@@ -130,15 +116,6 @@ fun AppListScreen(
             }
         }
 
-        item {
-            NoticeSearchField(
-                value = query,
-                onValueChange = { query = it },
-                hint = stringResource(R.string.search_hint),
-                onRefresh = onRefresh,
-            )
-        }
-
         when {
             state.loading -> item {
                 Box(Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) {
@@ -146,19 +123,17 @@ fun AppListScreen(
                 }
             }
 
-            filtered.isEmpty() -> item {
+            state.apps.isEmpty() -> item {
                 Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                     Text(
-                        stringResource(
-                            if (state.apps.isEmpty()) R.string.pack_empty else R.string.search_no_result,
-                        ),
+                        stringResource(R.string.pack_empty),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
 
-            else -> items(filtered, key = { it.packageName }) { app ->
+            else -> items(state.apps, key = { it.packageName }) { app ->
                 AppCard(
                     app = app,
                     enabled = app.packageName in state.enabledApps,
