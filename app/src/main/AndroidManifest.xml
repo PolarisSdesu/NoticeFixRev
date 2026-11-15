@@ -25,5 +25,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".ui.SearchActivity"
+            android:exported="false"
+            android:label="@string/action_search"
+            android:theme="@style/Theme.NoticeFixRev" />
+
+        <activity
+            android:name=".ui.LicenseActivity"
+            android:exported="false"
+            android:label="@string/license_title"
+            android:theme="@style/Theme.NoticeFixRev" />
     </application>
 </manifest>

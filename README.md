@@ -82,7 +82,9 @@ UI 与 **SaltReader**（`PolarisSdesu/SaltReader`）保持同一套视觉语言�
 | 边到边 | `Scaffold(contentWindowInsets = 0)`，列表自行处理手势条 inset |
 | 深色 | 动态取色优先，可切 AMOLED 纯黑 |
 
-字符串同步维护 `values` / `values-zh-rCN` / `values-zh-rTW` 三套。
+字符串同步维护 `values` / `values-zh-rCN` / `values-zh-rTW` / `values-ja` 四套（各 53 个键）。
+设置页可切换「跟随系统 / English / 简体中文 / 繁體中文 / 日本語」：Android 13+ 走系统 per-app
+locale（`LocaleManager`），更低版本用持久化 tag + `attachBaseContext` 包装；不支持的系统语言回落到英语。
 
 ## 构建
 

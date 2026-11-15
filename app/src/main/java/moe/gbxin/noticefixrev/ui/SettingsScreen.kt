@@ -86,10 +86,10 @@ fun SettingsScreen(
                 )
                 SettingsInfoRow(
                     stringResource(R.string.info_state),
-                    if (state.serviceAvailable) {
-                        stringResource(R.string.value_connected)
-                    } else {
-                        stringResource(R.string.value_disconnected)
+                    when (state.service) {
+                        ServiceState.CONNECTING -> stringResource(R.string.value_connecting)
+                        ServiceState.CONNECTED -> stringResource(R.string.value_connected)
+                        ServiceState.DISCONNECTED -> stringResource(R.string.value_disconnected)
                     },
                 )
             }
@@ -159,7 +159,7 @@ fun SettingsScreen(
                     SettingsActionRow(
                         icon = Icons.Outlined.Info,
                         title = stringResource(R.string.license_title),
-                        supporting = "AGPL-3.0 · NoticeFix by xudazhu1",
+                        supporting = "NoticeFix by xudazhu1",
                         onClick = onShowLicense,
                     )
                 }

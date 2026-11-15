@@ -84,8 +84,10 @@ fun AppListScreen(
         ),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        if (!state.serviceAvailable) {
-            item { ServiceBanner() }
+        when (state.service) {
+            ServiceState.CONNECTING -> item { ConnectingBanner() }
+            ServiceState.DISCONNECTED -> item { ServiceBanner() }
+            ServiceState.CONNECTED -> Unit
         }
 
         item { SectionLabel(stringResource(R.string.section_fix)) }
@@ -161,6 +163,28 @@ fun AppListScreen(
                 onToggle = { onToggleApp(sheet.packageName, it) },
                 onUsePack = { onUsePackIcon(sheet.packageName) },
                 onReset = { onResetIcon(sheet.packageName) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ConnectingBanner() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    ) {
+        Row(
+            Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            NoticeLoading(sizeDp = 20)
+            Spacer(Modifier.width(12.dp))
+            Text(
+                stringResource(R.string.service_connecting),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

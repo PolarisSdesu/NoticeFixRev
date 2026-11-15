@@ -19,6 +19,7 @@
     <string name="action_search">検索</string>
     <string name="action_close">閉じる</string>
     <string name="search_hint">アプリを検索</string>
+    <string name="service_connecting">LSPosed サービスに接続しています…</string>
     <string name="service_unavailable">LSPosed サービスに接続されていません</string>
     <string name="service_unavailable_desc">LSPosed でモジュールを有効にし、com.android.systemui のスコープを許可してください。</string>
     <string name="icon_section">このアプリに適用</string>
@@ -34,6 +35,7 @@
     <string name="info_scope">スコープ</string>
     <string name="info_state">状態</string>
     <string name="value_none">—</string>
+    <string name="value_connecting">接続中</string>
     <string name="value_connected">接続済み</string>
     <string name="value_disconnected">未接続</string>
     <string name="section_scope">スコープ</string>
@@ -51,6 +53,6 @@
     <string name="language_zh_tw">繁體中文</string>
     <string name="language_ja">日本語</string>
     <string name="section_about">このアプリについて</string>
-    <string name="about_body">Notice Fix Rev 1.0.0\nlibxposed API 101・Kotlin・Jetpack Compose で書き直した次世代の通知アイコン修正モジュール。\n原作 NoticeFix: xudazhu1／アイコン提供: fankes の AndroidNotifyIconAdapt（AGPL-3.0）。</string>
+    <string name="about_body">libxposed API 101・Kotlin・Jetpack Compose で書き直した次世代の通知アイコン修正モジュール。\n原作 NoticeFix: xudazhu1。</string>
     <string name="license_title">ライセンス</string>
 </resources>

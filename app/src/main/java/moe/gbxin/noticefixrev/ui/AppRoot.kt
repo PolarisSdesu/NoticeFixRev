@@ -30,9 +30,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import android.content.Intent
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -50,26 +52,11 @@ private enum class Tab(val labelRes: Int, val icon: ImageVector) {
 fun AppRoot(viewModel: MainViewModel = viewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var tab by remember { mutableStateOf(Tab.Apps) }
-    var searching by remember { mutableStateOf(false) }
-    var showLicense by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     val snackbar = remember { SnackbarHostState() }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     LaunchedEffect(Unit) { viewModel.refresh() }
-
-    if (showLicense) {
-        LicenseScreen(onBack = { showLicense = false })
-        return
-    }
-
-    if (searching) {
-        AppSearchScreen(
-            state = state,
-            onToggleApp = viewModel::setAppEnabled,
-            onBack = { searching = false },
-        )
-        return
-    }
 
     state.message?.let { message ->
         LaunchedEffect(message) {
@@ -107,7 +94,11 @@ fun AppRoot(viewModel: MainViewModel = viewModel()) {
                         TooltipIconButton(
                             icon = Icons.Filled.Search,
                             label = stringResource(R.string.action_search),
-                            onClick = { searching = true },
+                            onClick = {
+                                context.startActivity(
+                                    Intent(context, SearchActivity::class.java),
+                                )
+                            },
                             // Top bar: anchor the tooltip below so the status bar can't clip it.
                             anchorBelow = true,
                         )
@@ -164,7 +155,9 @@ fun AppRoot(viewModel: MainViewModel = viewModel()) {
             Tab.Settings -> SettingsScreen(
                 state = state,
                 onRequestScope = viewModel::requestScope,
-                onShowLicense = { showLicense = true },
+                onShowLicense = {
+                    context.startActivity(Intent(context, LicenseActivity::class.java))
+                },
                 contentPadding = padding,
             )
         }

@@ -14,6 +14,7 @@ import moe.gbxin.noticefixrev.R
 import moe.gbxin.noticefixrev.data.IconPack
 import moe.gbxin.noticefixrev.data.ModuleRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,9 +45,12 @@ data class PackItemUi(
     val installed: Boolean,
 )
 
+/** LSPosed service lifecycle as the UI sees it: unresolved → connected / disconnected. */
+enum class ServiceState { CONNECTING, CONNECTED, DISCONNECTED }
+
 data class UiState(
     val loading: Boolean = true,
-    val serviceAvailable: Boolean = false,
+    val service: ServiceState = ServiceState.CONNECTING,
     val masterEnabled: Boolean = false,
     val enabledApps: Set<String> = emptySet(),
     val apps: List<AppEntry> = emptyList(),
@@ -58,7 +62,11 @@ data class UiState(
     val apiVersion: Int? = null,
     val iconRevision: Int = 0,
     val message: String? = null,
-)
+) {
+    val serviceAvailable: Boolean get() = service == ServiceState.CONNECTED
+}
+
+private const val SERVICE_TIMEOUT_MS = 2_000L
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -70,10 +78,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()
 
+    /** Set once the first bind attempt had time to resolve, so we stop saying "connecting". */
+    private var serviceResolved = false
+
     private val serviceListener: (io.github.libxposed.service.XposedService?) -> Unit = { refresh() }
 
     init {
         NoticeFixRevApp.addServiceListener(serviceListener)
+
+        // The framework binds the service asynchronously and stays silent when the module
+        // is disabled, so give it a moment before declaring the connection dead.
+        viewModelScope.launch {
+            delay(SERVICE_TIMEOUT_MS)
+            serviceResolved = true
+            _state.update {
+                it.copy(
+                    service = if (repo.isServiceAvailable) {
+                        ServiceState.CONNECTED
+                    } else {
+                        ServiceState.DISCONNECTED
+                    },
+                )
+            }
+        }
     }
 
     fun refresh() {
@@ -85,7 +112,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _state.update {
                 it.copy(
                     loading = false,
-                    serviceAvailable = repo.isServiceAvailable,
+                    service = when {
+                        repo.isServiceAvailable -> ServiceState.CONNECTED
+                        serviceResolved -> ServiceState.DISCONNECTED
+                        else -> ServiceState.CONNECTING
+                    },
                     masterEnabled = repo.masterEnabled(),
                     enabledApps = repo.enabledApps(),
                     apps = apps,

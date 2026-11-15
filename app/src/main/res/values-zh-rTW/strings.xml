@@ -19,6 +19,7 @@
     <string name="action_search">搜尋</string>
     <string name="action_close">關閉</string>
     <string name="search_hint">搜尋應用</string>
+    <string name="service_connecting">正在連線到 LSPosed 服務…</string>
     <string name="service_unavailable">未連線到 LSPosed 服務</string>
     <string name="service_unavailable_desc">請確認模組已在 LSPosed 中啟用，並授予 com.android.systemui 作用域。</string>
     <string name="icon_section">對此應用生效</string>
@@ -34,6 +35,7 @@
     <string name="info_scope">作用域</string>
     <string name="info_state">狀態</string>
     <string name="value_none">—</string>
+    <string name="value_connecting">正在連線</string>
     <string name="value_connected">已連線</string>
     <string name="value_disconnected">未連線</string>
     <string name="section_scope">作用域</string>
@@ -51,6 +53,6 @@
     <string name="language_zh_tw">繁體中文</string>
     <string name="language_ja">日本語</string>
     <string name="section_about">關於</string>
-    <string name="about_body">Notice Fix Rev 1.0.0\n基於 libxposed API 101、Kotlin 與 Jetpack Compose 重寫的次世代通知圖示修復模組。\n原作 NoticeFix 由 xudazhu1 撰寫；圖示來自 fankes 的 AndroidNotifyIconAdapt（AGPL-3.0）。</string>
+    <string name="about_body">基於 libxposed API 101、Kotlin 與 Jetpack Compose 重寫的次世代通知圖示修復模組。\n原作 NoticeFix 由 xudazhu1 撰寫。</string>
     <string name="license_title">開源授權</string>
 </resources>
