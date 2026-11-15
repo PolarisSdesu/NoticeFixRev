@@ -1,29 +1,35 @@
+# Single source of truth for all dependency/plugin versions.
+# Toolchain mirrors SaltReader so both projects share build behaviour.
 [versions]
-agp = "8.7.3"
-kotlin = "2.0.21"
-coreKtx = "1.15.0"
-lifecycle = "2.8.7"
-activityCompose = "1.9.3"
-composeBom = "2024.10.01"
+agp = "9.4.0"
+kotlin = "2.3.21"
+composeBom = "2026.09.00"
+# Material 3 Expressive components (LargeFlexibleTopAppBar, LoadingIndicator)
+# only exist in the 1.5.0 beta line, so it is pinned explicitly on top of the BOM.
+material3 = "1.5.0-beta02"
+activityCompose = "1.13.0"
+coreKtx = "1.19.1"
+lifecycle = "2.11.0"
 xposedApi = "101.0.1"
 xposedService = "101.0.0"
 
 [libraries]
-androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
-androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
-androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }
-androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui" }
+androidx-compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
+androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+androidx-compose-foundation = { module = "androidx.compose.foundation:foundation" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
+androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 
-androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
-androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
-androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
-androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
-androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
-androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
-androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 
-libxposed-api = { group = "io.github.libxposed", name = "api", version.ref = "xposedApi" }
-libxposed-service = { group = "io.github.libxposed", name = "service", version.ref = "xposedService" }
+libxposed-api = { module = "io.github.libxposed:api", version.ref = "xposedApi" }
+libxposed-service = { module = "io.github.libxposed:service", version.ref = "xposedService" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

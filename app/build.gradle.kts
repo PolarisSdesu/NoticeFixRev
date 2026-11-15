@@ -6,14 +6,15 @@ plugins {
 
 android {
     namespace = "com.xeasy.noticefixrev"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.xeasy.noticefixrev"
         minSdk = 29
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
+        vectorDrawables.useSupportLibrary = true
     }
 
     buildTypes {
@@ -22,7 +23,7 @@ android {
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -32,41 +33,46 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     buildFeatures {
         compose = true
     }
 
     packaging {
         resources {
-            // libxposed module metadata must survive packaging untouched
+            // libxposed module metadata must survive packaging untouched.
             merges += "META-INF/xposed/*"
             excludes += setOf(
-                "META-INF/LICENSE*",
-                "META-INF/NOTICE*",
-                "META-INF/*.kotlin_module"
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "/META-INF/LICENSE*",
+                "/META-INF/NOTICE*",
             )
         }
     }
 }
 
-dependencies {
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.androidx.activity.compose)
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
 
+dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.compose.foundation)
+    // Pinned above the BOM on purpose: 1.5.0-beta02 provides the Expressive APIs
+    // (MaterialExpressiveTheme, LargeFlexibleTopAppBar, LoadingIndicator).
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
 
-    // Xposed API: supplied by the framework at runtime, never packaged
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+
+    // Supplied by the framework at runtime, never packaged into the APK.
     compileOnly(libs.libxposed.api)
     implementation(libs.libxposed.service)
 

@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.xeasy.noticefixrev.R
 import com.xeasy.noticefixrev.data.ModuleRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -93,7 +94,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 }
             } else {
-                _state.update { it.copy(message = "图标保存失败，请换一张图片试试") }
+                _state.update { it.copy(message = getApplication<Application>().getString(R.string.saved_failed)) }
             }
         }
     }
@@ -111,9 +112,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun requestScope() {
         repo.requestScope { ok, reason ->
-            _state.update {
-                it.copy(message = if (ok) "作用域已添加，重启 SystemUI 后生效" else "作用域申请失败：${reason ?: "未知原因"}")
+            val message = if (ok) {
+                getApplication<Application>().getString(R.string.scope_ok)
+            } else {
+                getApplication<Application>().getString(
+                    R.string.scope_failed,
+                    reason ?: getApplication<Application>().getString(R.string.value_none),
+                )
             }
+            _state.update { it.copy(message = message) }
         }
     }
 

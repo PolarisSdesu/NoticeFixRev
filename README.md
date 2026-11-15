@@ -47,14 +47,34 @@ app/src/main/java/com/xeasy/noticefixrev/
    `Icon.createWithBitmap(...)`；状态栏、通知栏、锁屏同时生效。
 4. 模块 UI 任意时刻改配置 → 框架把变更推送给 SystemUI 里的 prefs 监听器 → 快照重载，无需重启。
 
+## 设计规范
+
+UI 与 **SaltReader**（`PolarisSdesu/SaltReader`）保持同一套视觉语言，直接对齐而非近似：
+
+| 维度 | 取值 |
+|---|---|
+| 主题 | `MaterialExpressiveTheme` + `MotionScheme.expressive()` |
+| 主色 | M3 蓝种子 `#0061A4` 全量 light/dark color scheme（含 surfaceContainer 系列） |
+| 圆角 | `Shapes` 4 / 8 / 12 / 16 / 28 dp |
+| 字阶 | M3 baseline 按中文可读性放大（headline 34/42、title 24/30、body 15/22） |
+| 顶栏 | `LargeFlexibleTopAppBar` + `exitUntilCollapsedScrollBehavior`，背景 `background`，滚动后 `surfaceContainer` |
+| 卡片 | `surfaceContainerLow` + `extraLarge`(28dp) 圆角 |
+| 图标 | 40dp 圆形 `primaryContainer` 底板 |
+| 加载 | M3E `LoadingIndicator` |
+| 边到边 | `Scaffold(contentWindowInsets = 0)`，列表自行处理手势条 inset |
+| 深色 | 动态取色优先，可切 AMOLED 纯黑 |
+
+字符串同步维护 `values` / `values-zh-rCN` / `values-zh-rTW` 三套。
+
 ## 构建
 
 ```bash
 ./gradlew :app:assembleRelease
 ```
 
-需要 Android SDK 35 + JDK 17+。已知签名可用仓库根目录外的 `keystore.jks`，
-在 `app/build.gradle.kts` 里加 `signingConfigs` 即可。
+工具链与 SaltReader 完全一致：JDK 21、Gradle 9.7.1、AGP 9.4.0、Kotlin 2.3.21、
+`compileSdk 37` / `targetSdk 36` / `minSdk 29`，material3 固定 `1.5.0-beta02`（Expressive）。
+需要 Android SDK 平台 37 + build-tools；签名可用仓库外的 `keystore.jks`。
 
 ## 路线图
 
