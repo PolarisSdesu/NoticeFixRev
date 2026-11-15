@@ -116,9 +116,9 @@ class ModuleRepository(private val context: Context) {
 
     private fun decode(uri: Uri): Bitmap? = runCatching {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri)) {
-                it.isMutableRequired = true
-                it.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+            ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri)) { decoder, _, _ ->
+                decoder.isMutableRequired = true
+                decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
             }
         } else {
             context.contentResolver.openInputStream(uri)?.use(BitmapFactory::decodeStream)

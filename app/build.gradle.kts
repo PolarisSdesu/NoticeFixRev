@@ -1,8 +1,20 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
+
+// Release signing material is never committed: it lives in the git-ignored
+// keystore.properties (same convention as SaltReader). Without that file the
+// release build is simply left unsigned.
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
+fun signingValue(property: String): String? = keystoreProperties.getProperty(property)
 
 android {
     namespace = "com.xeasy.noticefixrev"
@@ -17,6 +29,18 @@ android {
         vectorDrawables.useSupportLibrary = true
     }
 
+    signingConfigs {
+        val storeFilePath = signingValue("storeFile")
+        if (storeFilePath != null) {
+            create("release") {
+                storeFile = rootProject.file(storeFilePath)
+                storePassword = signingValue("storePassword")
+                keyAlias = signingValue("keyAlias")
+                keyPassword = signingValue("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -25,6 +49,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 

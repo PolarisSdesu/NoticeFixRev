@@ -9,3 +9,8 @@ captures/
 *.apk
 *.aab
 *.keystore
+*.jks
+keystore.properties
+/keystore/
+*.log
+.apkcheck/

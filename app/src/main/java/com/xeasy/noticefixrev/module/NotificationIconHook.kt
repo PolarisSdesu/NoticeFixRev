@@ -1,11 +1,14 @@
 package com.xeasy.noticefixrev.module
 
+import android.app.Notification
 import android.graphics.drawable.Icon
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
+import java.lang.reflect.Field
+import java.lang.reflect.Method
 
 /**
  * Rewrites the small icon of incoming notifications before SystemUI ranks them.
@@ -16,6 +19,20 @@ import io.github.libxposed.api.XposedModule
  * the keyguard.
  */
 internal class NotificationIconHook(private val module: XposedModule) {
+
+    /**
+     * Since API 37 the public `Notification.smallIcon` field is gone: it lives in the
+     * private `mSmallIcon`, and the only writer (`setSmallIcon(Icon)`) is `@hide`.
+     * Both are `@UnsupportedAppUsage` greylist members, so reflection still reaches
+     * them — the original NoticeFix patches the field the same way.
+     */
+    private val smallIconField: Field? = runCatching {
+        Notification::class.java.getDeclaredField("mSmallIcon").apply { isAccessible = true }
+    }.getOrNull()
+
+    private val smallIconSetter: Method? = runCatching {
+        Notification::class.java.getDeclaredMethod("setSmallIcon", Icon::class.java)
+    }.getOrNull()
 
     fun install(classLoader: ClassLoader) {
         val listenerClass = Class.forName(
@@ -38,7 +55,12 @@ internal class NotificationIconHook(private val module: XposedModule) {
                 chain.proceed()
             }
 
-        module.log(Log.INFO, ModuleEntry.TAG, "hooked ${listenerClass.name}#onNotificationPosted")
+        module.log(
+            Log.INFO,
+            ModuleEntry.TAG,
+            "hooked ${listenerClass.name}#onNotificationPosted " +
+                "(mSmallIcon=${smallIconField != null}, setter=${smallIconSetter != null})",
+        )
     }
 
     private fun patch(sbn: StatusBarNotification) {
@@ -47,8 +69,12 @@ internal class NotificationIconHook(private val module: XposedModule) {
         if (!config.shouldPatch(pkg)) return
 
         val bitmap = config.iconFor(pkg) ?: return
+        val notification = sbn.notification ?: return
+        val icon = Icon.createWithBitmap(bitmap)
         runCatching {
-            sbn.notification.smallIcon = Icon.createWithBitmap(bitmap)
+            smallIconField?.set(notification, icon)
+                ?: smallIconSetter?.invoke(notification, icon)
+                ?: error("Notification#mSmallIcon is not reachable")
         }.onFailure {
             module.log(Log.WARN, ModuleEntry.TAG, "cannot patch icon of $pkg", it)
         }
