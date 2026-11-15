@@ -1,4 +1,4 @@
-package com.xeasy.noticefixrev.data
+package moe.gbxin.noticefixrev.data
 
 /**
  * Keys shared by the module UI (writer) and the hooked SystemUI process (reader).

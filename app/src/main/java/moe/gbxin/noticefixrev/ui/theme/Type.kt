@@ -1,4 +1,4 @@
-package com.xeasy.noticefixrev.ui.theme
+package moe.gbxin.noticefixrev.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.unit.sp

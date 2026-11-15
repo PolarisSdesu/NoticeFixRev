@@ -17,11 +17,11 @@ val keystoreProperties = Properties().apply {
 fun signingValue(property: String): String? = keystoreProperties.getProperty(property)
 
 android {
-    namespace = "com.xeasy.noticefixrev"
+    namespace = "moe.gbxin.noticefixrev"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.xeasy.noticefixrev"
+        applicationId = "moe.gbxin.noticefixrev"
         minSdk = 29
         targetSdk = 36
         versionCode = 1

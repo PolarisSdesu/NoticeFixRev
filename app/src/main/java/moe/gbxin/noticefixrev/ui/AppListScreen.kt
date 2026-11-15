@@ -1,4 +1,4 @@
-package com.xeasy.noticefixrev.ui
+package moe.gbxin.noticefixrev.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -18,19 +18,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Palette
-import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Undo
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -47,20 +41,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.xeasy.noticefixrev.R
-import com.xeasy.noticefixrev.ui.components.NoticeLoading
-import com.xeasy.noticefixrev.ui.components.SectionLabel
-import com.xeasy.noticefixrev.ui.components.SettingsCard
-import com.xeasy.noticefixrev.ui.components.SettingsSwitchRow
+import moe.gbxin.noticefixrev.R
+import moe.gbxin.noticefixrev.ui.components.NoticeLoading
+import moe.gbxin.noticefixrev.ui.components.NoticeSearchField
+import moe.gbxin.noticefixrev.ui.components.SectionLabel
+import moe.gbxin.noticefixrev.ui.components.SettingsCard
+import moe.gbxin.noticefixrev.ui.components.SettingsSwitchRow
+import moe.gbxin.noticefixrev.ui.components.navigationBarBottomPadding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+/**
+ * Home: the whole page is one scrolling list, so the switch, the apply button, the
+ * search field and the app rows share a single scroll surface instead of stacking a
+ * header column above a half-height list.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppListScreen(
@@ -88,13 +88,22 @@ fun AppListScreen(
         }
     }
 
-    Column(Modifier.fillMaxSize().padding(contentPadding)) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(contentPadding),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = 4.dp,
+            bottom = 16.dp + navigationBarBottomPadding(),
+        ),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         if (!state.serviceAvailable) {
-            ServiceBanner(Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+            item { ServiceBanner() }
         }
 
-        Column(Modifier.padding(horizontal = 16.dp)) {
-            SectionLabel(stringResource(R.string.section_fix))
+        item { SectionLabel(stringResource(R.string.section_fix)) }
+        item {
             SettingsCard {
                 SettingsSwitchRow(
                     icon = Icons.Outlined.Palette,
@@ -104,9 +113,9 @@ fun AppListScreen(
                     onToggle = { onToggleMaster(!state.masterEnabled) },
                 )
             }
+        }
 
-            Spacer(Modifier.height(12.dp))
-
+        item {
             Button(
                 onClick = onApplyAll,
                 enabled = state.serviceAvailable && state.apps.isNotEmpty(),
@@ -121,45 +130,35 @@ fun AppListScreen(
             }
         }
 
-        Spacer(Modifier.height(12.dp))
-
-        SearchField(
-            value = query,
-            onValueChange = { query = it },
-            onRefresh = onRefresh,
-        )
-
-        Spacer(Modifier.height(4.dp))
-
-        if (state.loading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                NoticeLoading()
-            }
-            return@Column
+        item {
+            NoticeSearchField(
+                value = query,
+                onValueChange = { query = it },
+                hint = stringResource(R.string.search_hint),
+                onRefresh = onRefresh,
+            )
         }
 
-        if (state.apps.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-                Text(
-                    stringResource(R.string.pack_empty),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+        when {
+            state.loading -> item {
+                Box(Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) {
+                    NoticeLoading()
+                }
             }
-            return@Column
-        }
 
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = 16.dp,
-                end = 16.dp,
-                top = 4.dp,
-                bottom = 16.dp,
-            ),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            items(filtered, key = { it.packageName }) { app ->
+            filtered.isEmpty() -> item {
+                Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                    Text(
+                        stringResource(
+                            if (state.apps.isEmpty()) R.string.pack_empty else R.string.search_no_result,
+                        ),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            else -> items(filtered, key = { it.packageName }) { app ->
                 AppCard(
                     app = app,
                     enabled = app.packageName in state.enabledApps,
@@ -193,9 +192,9 @@ fun AppListScreen(
 }
 
 @Composable
-private fun ServiceBanner(modifier: Modifier = Modifier) {
+private fun ServiceBanner() {
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.errorContainer,
     ) {
@@ -211,64 +210,6 @@ private fun ServiceBanner(modifier: Modifier = Modifier) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onErrorContainer,
             )
-        }
-    }
-}
-
-@Composable
-private fun SearchField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    onRefresh: () -> Unit,
-) {
-    Surface(
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .height(56.dp),
-    ) {
-        Row(
-            Modifier.fillMaxSize().padding(start = 18.dp, end = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                Icons.Filled.Search,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(22.dp),
-            )
-            Spacer(Modifier.width(12.dp))
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                singleLine = true,
-                textStyle = MaterialTheme.typography.bodyLarge.copy(
-                    color = MaterialTheme.colorScheme.onSurface,
-                ),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { }),
-                modifier = Modifier.weight(1f),
-                decorationBox = { innerTextField ->
-                    Box(contentAlignment = Alignment.CenterStart) {
-                        if (value.isEmpty()) {
-                            Text(
-                                stringResource(R.string.search_hint),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                        innerTextField()
-                    }
-                },
-            )
-            IconButton(onClick = onRefresh) {
-                Icon(Icons.Outlined.Refresh, contentDescription = null)
-            }
         }
     }
 }
@@ -317,7 +258,10 @@ private fun AppCard(
     }
 }
 
-/** Pack glyphs are white silhouettes, so they sit on a tinted circle. */
+/**
+ * Pack glyphs are white silhouettes, so they are drawn on a tinted circle and tinted
+ * with `onPrimaryContainer`: the icon then follows the theme (light/dark/dynamic).
+ */
 @Composable
 private fun PackGlyph(app: AppEntry, size: Int) {
     Box(
@@ -330,7 +274,8 @@ private fun PackGlyph(app: AppEntry, size: Int) {
         Image(
             bitmap = app.packIcon,
             contentDescription = null,
-            modifier = Modifier.size((size * 0.62f).dp),
+            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer),
+            modifier = Modifier.size((size * 0.5f).dp),
         )
     }
 }
@@ -363,11 +308,11 @@ private fun AppDetailSheet(
                 .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center,
         ) {
-            val preview = applied ?: app.packIcon
             Image(
-                bitmap = preview,
+                bitmap = applied ?: app.packIcon,
                 contentDescription = null,
-                modifier = Modifier.size(56.dp),
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer),
+                modifier = Modifier.size(48.dp),
             )
         }
 
@@ -394,10 +339,7 @@ private fun AppDetailSheet(
         Spacer(Modifier.height(12.dp))
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(
-                onClick = onUsePack,
-                modifier = Modifier.weight(1f),
-            ) {
+            Button(onClick = onUsePack, modifier = Modifier.weight(1f)) {
                 Icon(Icons.Outlined.Palette, null, Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.action_use_pack))

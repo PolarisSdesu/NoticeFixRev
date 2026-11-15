@@ -1,10 +1,10 @@
-package com.xeasy.noticefixrev.ui
+package moe.gbxin.noticefixrev.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.xeasy.noticefixrev.ui.theme.NoticeFixRevTheme
+import moe.gbxin.noticefixrev.ui.theme.NoticeFixRevTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

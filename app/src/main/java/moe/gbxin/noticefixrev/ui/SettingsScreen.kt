@@ -1,4 +1,4 @@
-package com.xeasy.noticefixrev.ui
+package moe.gbxin.noticefixrev.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,12 +15,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.xeasy.noticefixrev.R
-import com.xeasy.noticefixrev.ui.components.SectionLabel
-import com.xeasy.noticefixrev.ui.components.SettingsActionRow
-import com.xeasy.noticefixrev.ui.components.SettingsCard
-import com.xeasy.noticefixrev.ui.components.SettingsInfoRow
-import com.xeasy.noticefixrev.ui.components.navigationBarBottomPadding
+import moe.gbxin.noticefixrev.R
+import moe.gbxin.noticefixrev.ui.components.SectionLabel
+import moe.gbxin.noticefixrev.ui.components.SettingsActionRow
+import moe.gbxin.noticefixrev.ui.components.SettingsCard
+import moe.gbxin.noticefixrev.ui.components.SettingsInfoRow
+import moe.gbxin.noticefixrev.ui.components.navigationBarBottomPadding
 
 @Composable
 fun SettingsScreen(

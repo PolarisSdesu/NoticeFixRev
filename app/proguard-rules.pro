@@ -1,6 +1,6 @@
 # libxposed entry point: keep the module class and its hook implementations.
--keep class com.xeasy.noticefixrev.module.ModuleEntry { *; }
--keep class com.xeasy.noticefixrev.module.** { *; }
+-keep class moe.gbxin.noticefixrev.module.ModuleEntry { *; }
+-keep class moe.gbxin.noticefixrev.module.** { *; }
 
 # The framework reads this file to discover entry classes.
 -adaptresourcefilecontents META-INF/xposed/java_init.list

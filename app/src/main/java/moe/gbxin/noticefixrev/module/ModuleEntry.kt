@@ -1,4 +1,4 @@
-package com.xeasy.noticefixrev.module
+package moe.gbxin.noticefixrev.module
 
 import android.util.Log
 import io.github.libxposed.api.XposedModule

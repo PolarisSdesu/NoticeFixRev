@@ -1,4 +1,4 @@
-package com.xeasy.noticefixrev.ui
+package moe.gbxin.noticefixrev.ui
 
 import android.app.Application
 import android.content.Context
@@ -9,10 +9,10 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.xeasy.noticefixrev.NoticeFixRevApp
-import com.xeasy.noticefixrev.R
-import com.xeasy.noticefixrev.data.IconPack
-import com.xeasy.noticefixrev.data.ModuleRepository
+import moe.gbxin.noticefixrev.NoticeFixRevApp
+import moe.gbxin.noticefixrev.R
+import moe.gbxin.noticefixrev.data.IconPack
+import moe.gbxin.noticefixrev.data.ModuleRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,12 +34,23 @@ data class AppEntry(
     val packIcon: ImageBitmap,
 )
 
+/**
+ * One entry of the bundled pack, shown in the icon-pack browser. Installed apps keep
+ * their real launcher label so the grid reads like the launcher's icon pack screen.
+ */
+data class PackItemUi(
+    val packageName: String,
+    val title: String,
+    val installed: Boolean,
+)
+
 data class UiState(
     val loading: Boolean = true,
     val serviceAvailable: Boolean = false,
     val masterEnabled: Boolean = false,
     val enabledApps: Set<String> = emptySet(),
     val apps: List<AppEntry> = emptyList(),
+    val packItems: List<PackItemUi> = emptyList(),
     /** Total entries in the bundled icon pack (all three tables merged). */
     val packTotal: Int = 0,
     val frameworkName: String? = null,
@@ -52,6 +63,9 @@ data class UiState(
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repo = ModuleRepository(application)
+
+    /** Pack glyphs are tiny (~46px); caching the decoded ones keeps grid scrolling cheap. */
+    private val packBitmapCache = java.util.concurrent.ConcurrentHashMap<String, ImageBitmap>()
 
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()
@@ -66,7 +80,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val context = getApplication<Application>()
             val pack = withContext(Dispatchers.IO) { IconPack.load(context) }
-            val apps = withContext(Dispatchers.IO) { loadApps(context, pack) }
+            val (apps, packItems) = withContext(Dispatchers.IO) { loadInstalled(context, pack) }
 
             _state.update {
                 it.copy(
@@ -75,6 +89,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     masterEnabled = repo.masterEnabled(),
                     enabledApps = repo.enabledApps(),
                     apps = apps,
+                    packItems = packItems,
                     packTotal = pack.size,
                     frameworkName = repo.frameworkName,
                     frameworkVersion = repo.frameworkVersion,
@@ -151,6 +166,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Lazily decoded pack glyph for the browser grid. */
+    suspend fun packBitmap(pkg: String): ImageBitmap? {
+        packBitmapCache[pkg]?.let { return it }
+        return withContext(Dispatchers.IO) {
+            IconPack.load(getApplication<Application>()).get(pkg)
+                ?.bitmap()
+                ?.asImageBitmap()
+                ?.also { packBitmapCache[pkg] = it }
+        }
+    }
+
     /** Currently applied glyph (pack or otherwise), for the detail sheet preview. */
     suspend fun appliedIcon(pkg: String): ImageBitmap? = withContext(Dispatchers.IO) {
         repo.loadLocalIcon(pkg)?.asImageBitmap()
@@ -210,23 +236,40 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun getString(res: Int, vararg args: Any): String =
         getApplication<Application>().getString(res, *args)
 
-    private fun loadApps(context: Context, pack: IconPack): List<AppEntry> {
+    private fun loadInstalled(
+        context: Context,
+        pack: IconPack,
+    ): Pair<List<AppEntry>, List<PackItemUi>> {
         val pm = context.packageManager
-        return pm.getInstalledApplications(PackageManager.GET_META_DATA)
-            .asSequence()
-            .filter { it.packageName != context.packageName }
-            .mapNotNull { info ->
-                val entry = pack.get(info.packageName) ?: return@mapNotNull null
-                val glyph = entry.bitmap()?.asImageBitmap() ?: return@mapNotNull null
-                AppEntry(
-                    packageName = info.packageName,
-                    label = pm.getApplicationLabel(info).toString(),
-                    icon = loadAppIcon(pm, info),
-                    packIcon = glyph,
+        val apps = ArrayList<AppEntry>()
+        val labels = HashMap<String, String>()
+
+        pm.getInstalledApplications(PackageManager.GET_META_DATA).forEach { info ->
+            if (info.packageName == context.packageName) return@forEach
+            val entry = pack.get(info.packageName) ?: return@forEach
+            val glyph = entry.bitmap() ?: return@forEach
+            val label = pm.getApplicationLabel(info).toString()
+            labels[info.packageName] = label
+            apps += AppEntry(
+                packageName = info.packageName,
+                label = label,
+                icon = loadAppIcon(pm, info),
+                packIcon = glyph.asImageBitmap(),
+            )
+        }
+
+        val items = pack.all()
+            .map { entry ->
+                val installedLabel = labels[entry.packageName]
+                PackItemUi(
+                    packageName = entry.packageName,
+                    title = installedLabel ?: entry.appName,
+                    installed = installedLabel != null,
                 )
             }
-            .sortedBy { it.label.lowercase() }
-            .toList()
+            .sortedWith(compareBy({ !it.installed }, { it.title.lowercase() }))
+
+        return apps.sortedBy { it.label.lowercase() } to items
     }
 
     private fun loadAppIcon(pm: PackageManager, info: ApplicationInfo): ImageBitmap =

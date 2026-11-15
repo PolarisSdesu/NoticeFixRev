@@ -1,4 +1,4 @@
-package com.xeasy.noticefixrev.ui.theme
+package moe.gbxin.noticefixrev.ui.theme
 
 import android.app.Activity
 import android.os.Build

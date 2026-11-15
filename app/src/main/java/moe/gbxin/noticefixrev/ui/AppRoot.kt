@@ -1,10 +1,11 @@
-package com.xeasy.noticefixrev.ui
+package moe.gbxin.noticefixrev.ui
 
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -30,10 +31,11 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.xeasy.noticefixrev.R
+import moe.gbxin.noticefixrev.R
 
 private enum class Tab(val labelRes: Int, val icon: ImageVector) {
     Apps(R.string.tab_apps, Icons.Outlined.Apps),
+    Pack(R.string.tab_pack, Icons.Outlined.Palette),
     Settings(R.string.tab_settings, Icons.Outlined.Settings),
 }
 
@@ -67,6 +69,7 @@ fun AppRoot(viewModel: MainViewModel = viewModel()) {
                     Text(
                         when (tab) {
                             Tab.Apps -> stringResource(R.string.app_name)
+                            Tab.Pack -> stringResource(R.string.tab_pack)
                             Tab.Settings -> stringResource(R.string.tab_settings)
                         },
                         maxLines = 1,
@@ -86,13 +89,14 @@ fun AppRoot(viewModel: MainViewModel = viewModel()) {
                         selected = tab == entry,
                         onClick = { tab = entry },
                         icon = { Icon(entry.icon, null) },
+                        // Labels only while the destination is selected, per M3 guidance.
                         label = { Text(stringResource(entry.labelRes)) },
+                        alwaysShowLabel = false,
                     )
                 }
             }
         },
     ) { padding ->
-        val contentPadding = padding
         when (tab) {
             Tab.Apps -> AppListScreen(
                 state = state,
@@ -103,13 +107,20 @@ fun AppRoot(viewModel: MainViewModel = viewModel()) {
                 onUsePackIcon = viewModel::usePackIcon,
                 onResetIcon = viewModel::resetIcon,
                 loadAppliedIcon = viewModel::appliedIcon,
-                contentPadding = contentPadding,
+                contentPadding = padding,
+            )
+
+            Tab.Pack -> IconPackScreen(
+                state = state,
+                onToggleApp = viewModel::setAppEnabled,
+                loadBitmap = viewModel::packBitmap,
+                contentPadding = padding,
             )
 
             Tab.Settings -> SettingsScreen(
                 state = state,
                 onRequestScope = viewModel::requestScope,
-                contentPadding = contentPadding,
+                contentPadding = padding,
             )
         }
     }

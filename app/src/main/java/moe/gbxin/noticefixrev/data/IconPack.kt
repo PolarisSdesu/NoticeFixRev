@@ -1,4 +1,4 @@
-package com.xeasy.noticefixrev.data
+package moe.gbxin.noticefixrev.data
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -40,6 +40,9 @@ class IconPack private constructor(private val entries: Map<String, PackIcon>) {
     fun get(pkg: String): PackIcon? = entries[pkg]
 
     fun contains(pkg: String): Boolean = entries.containsKey(pkg)
+
+    /** Every entry, in the order the tables were merged. */
+    fun all(): List<PackIcon> = entries.values.toList()
 
     companion object {
         private const val TAG = "NoticeFixRev"

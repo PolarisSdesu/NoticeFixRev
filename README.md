@@ -52,7 +52,7 @@ app/src/main/java/com/xeasy/noticefixrev/
 | 文件 | 作用 |
 |---|---|
 | `module.prop` | `minApiVersion=101`、`staticScope=true`、`autoHotReload=true` |
-| `java_init.list` | `com.xeasy.noticefixrev.module.ModuleEntry` |
+| `java_init.list` | `moe.gbxin.noticefixrev.module.ModuleEntry` |
 | `scope.list` | `com.android.systemui` |
 
 ## 工作原理

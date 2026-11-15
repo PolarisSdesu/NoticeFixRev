@@ -1,10 +1,10 @@
-package com.xeasy.noticefixrev.data
+package moe.gbxin.noticefixrev.data
 
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import com.xeasy.noticefixrev.NoticeFixRevApp
+import moe.gbxin.noticefixrev.NoticeFixRevApp
 import io.github.libxposed.service.XposedService
 import java.io.File
 import java.io.FileOutputStream

@@ -1,4 +1,4 @@
-package com.xeasy.noticefixrev.module
+package moe.gbxin.noticefixrev.module
 
 import android.app.Notification
 import android.graphics.drawable.Icon
