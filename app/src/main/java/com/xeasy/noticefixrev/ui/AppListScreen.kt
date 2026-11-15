@@ -1,8 +1,5 @@
 package com.xeasy.noticefixrev.ui
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,18 +22,17 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.AddPhotoAlternate
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Undo
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -70,24 +66,16 @@ import kotlinx.coroutines.withContext
 fun AppListScreen(
     state: UiState,
     onRefresh: () -> Unit,
-    onReapplyPack: () -> Unit,
+    onApplyAll: () -> Unit,
     onToggleMaster: (Boolean) -> Unit,
     onToggleApp: (String, Boolean) -> Unit,
     onUsePackIcon: (String) -> Unit,
-    onSaveIcon: (String, Uri) -> Unit,
     onResetIcon: (String) -> Unit,
-    loadPreview: suspend (String) -> ImageBitmap?,
+    loadAppliedIcon: suspend (String) -> ImageBitmap?,
     contentPadding: PaddingValues,
 ) {
     var query by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf<AppEntry?>(null) }
-    var pendingPackage by remember { mutableStateOf<String?>(null) }
-
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        val pkg = pendingPackage
-        if (uri != null && pkg != null) onSaveIcon(pkg, uri)
-        pendingPackage = null
-    }
 
     val filtered = remember(state.apps, query) {
         if (query.isBlank()) {
@@ -112,27 +100,35 @@ fun AppListScreen(
                     icon = Icons.Outlined.Palette,
                     title = stringResource(R.string.master_enabled),
                     checked = state.masterEnabled,
-                    supporting = stringResource(R.string.pack_summary, state.packInstalled),
+                    supporting = stringResource(R.string.pack_summary, state.apps.size),
                     onToggle = { onToggleMaster(!state.masterEnabled) },
                 )
-                Row(
-                    Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, bottom = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        stringResource(R.string.pack_source),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.weight(1f),
-                    )
-                    TextButton(onClick = onReapplyPack, enabled = state.serviceAvailable) {
-                        Text(stringResource(R.string.pack_reapply))
-                    }
-                }
             }
+
+            Spacer(Modifier.height(12.dp))
+
+            Button(
+                onClick = onApplyAll,
+                enabled = state.serviceAvailable && state.apps.isNotEmpty(),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+            ) {
+                Icon(Icons.Filled.Check, null, Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    stringResource(R.string.action_apply_all, state.apps.size),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+
+            Spacer(Modifier.height(6.dp))
+            Text(
+                stringResource(R.string.pack_source),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
 
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(12.dp))
 
         SearchField(
             value = query,
@@ -145,6 +141,17 @@ fun AppListScreen(
         if (state.loading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 NoticeLoading()
+            }
+            return@Column
+        }
+
+        if (state.apps.isEmpty()) {
+            Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+                Text(
+                    stringResource(R.string.pack_empty),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
             return@Column
         }
@@ -183,13 +190,9 @@ fun AppListScreen(
                 app = sheet,
                 enabled = sheet.packageName in state.enabledApps,
                 iconRevision = state.iconRevision,
-                loadPreview = loadPreview,
+                loadAppliedIcon = loadAppliedIcon,
                 onToggle = { onToggleApp(sheet.packageName, it) },
                 onUsePack = { onUsePackIcon(sheet.packageName) },
-                onPick = {
-                    pendingPackage = sheet.packageName
-                    picker.launch("image/*")
-                },
                 onReset = { onResetIcon(sheet.packageName) },
             )
         }
@@ -297,7 +300,7 @@ private fun AppCard(
                 .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            AppIcon(app = app, size = 40)
+            PackGlyph(app, 40)
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
                 Text(
@@ -308,42 +311,22 @@ private fun AppCard(
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    if (app.adapted) {
-                        stringResource(R.string.pack_entry)
-                    } else {
-                        stringResource(R.string.pack_missing)
-                    },
+                    app.packageName,
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (app.adapted) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
             Spacer(Modifier.width(12.dp))
-            Switch(checked = enabled, onCheckedChange = onToggle, enabled = app.adapted || enabled)
+            Switch(checked = enabled, onCheckedChange = onToggle)
         }
     }
 }
 
-/**
- * Pack glyphs are white silhouettes, so they get a tinted circle behind them; fall back
- * to the app's own launcher icon when the pack has no entry.
- */
+/** Pack glyphs are white silhouettes, so they sit on a tinted circle. */
 @Composable
-private fun AppIcon(app: AppEntry, size: Int) {
-    val pack = app.packIcon
-    if (pack == null) {
-        Image(
-            bitmap = app.icon,
-            contentDescription = null,
-            modifier = Modifier.size(size.dp).clip(CircleShape),
-        )
-        return
-    }
+private fun PackGlyph(app: AppEntry, size: Int) {
     Box(
         Modifier
             .size(size.dp)
@@ -352,7 +335,7 @@ private fun AppIcon(app: AppEntry, size: Int) {
         contentAlignment = Alignment.Center,
     ) {
         Image(
-            bitmap = pack,
+            bitmap = app.packIcon,
             contentDescription = null,
             modifier = Modifier.size((size * 0.62f).dp),
         )
@@ -364,14 +347,13 @@ private fun AppDetailSheet(
     app: AppEntry,
     enabled: Boolean,
     iconRevision: Int,
-    loadPreview: suspend (String) -> ImageBitmap?,
+    loadAppliedIcon: suspend (String) -> ImageBitmap?,
     onToggle: (Boolean) -> Unit,
     onUsePack: () -> Unit,
-    onPick: () -> Unit,
     onReset: () -> Unit,
 ) {
     val applied by produceState<ImageBitmap?>(initialValue = null, app.packageName, iconRevision) {
-        value = withContext(Dispatchers.IO) { loadPreview(app.packageName) }
+        value = withContext(Dispatchers.IO) { loadAppliedIcon(app.packageName) }
     }
 
     Column(
@@ -389,19 +371,11 @@ private fun AppDetailSheet(
             contentAlignment = Alignment.Center,
         ) {
             val preview = applied ?: app.packIcon
-            if (preview != null) {
-                Image(
-                    bitmap = preview,
-                    contentDescription = null,
-                    modifier = Modifier.size(56.dp),
-                )
-            } else {
-                Image(
-                    bitmap = app.icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(72.dp),
-                )
-            }
+            Image(
+                bitmap = preview,
+                contentDescription = null,
+                modifier = Modifier.size(56.dp),
+            )
         }
 
         Spacer(Modifier.height(12.dp))
@@ -419,11 +393,7 @@ private fun AppDetailSheet(
                 icon = Icons.Outlined.Palette,
                 title = stringResource(R.string.icon_section),
                 checked = enabled,
-                supporting = when {
-                    app.adapted -> stringResource(R.string.pack_entry)
-                    applied != null -> stringResource(R.string.icon_custom)
-                    else -> stringResource(R.string.pack_missing)
-                },
+                supporting = stringResource(R.string.icon_supporting, app.label),
                 onToggle = { onToggle(!enabled) },
             )
         }
@@ -431,36 +401,21 @@ private fun AppDetailSheet(
         Spacer(Modifier.height(12.dp))
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilledTonalButton(
+            Button(
                 onClick = onUsePack,
-                enabled = app.adapted,
                 modifier = Modifier.weight(1f),
             ) {
                 Icon(Icons.Outlined.Palette, null, Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.action_use_pack))
             }
-            OutlinedButton(onClick = onPick, modifier = Modifier.weight(1f)) {
-                Icon(Icons.Outlined.AddPhotoAlternate, null, Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.action_choose_icon))
+            if (enabled) {
+                TextButton(onClick = onReset, modifier = Modifier.weight(1f)) {
+                    Icon(Icons.Outlined.Undo, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.action_reset_icon))
+                }
             }
         }
-
-        if (enabled || applied != null) {
-            TextButton(onClick = onReset) {
-                Icon(Icons.Outlined.Undo, null, Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.action_reset_icon))
-            }
-        } else {
-            Spacer(Modifier.height(8.dp))
-        }
-
-        Text(
-            stringResource(R.string.choose_icon_hint),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }

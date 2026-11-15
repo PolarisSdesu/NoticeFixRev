@@ -4,12 +4,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.ImageDecoder
-import android.net.Uri
-import android.os.Build
 import com.xeasy.noticefixrev.NoticeFixRevApp
 import io.github.libxposed.service.XposedService
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 
@@ -71,15 +67,6 @@ class ModuleRepository(private val context: Context) {
             )
         }.onFailure { onResult(false, it.message) }
     }
-
-    /** Decodes, normalizes and stores a user-picked image; returns true on success. */
-    fun saveIcon(pkg: String, uri: Uri): Boolean = runCatching {
-        val source = decode(uri) ?: return@runCatching false
-        if (!writeIcon(pkg, normalize(source))) return@runCatching false
-        // A hand-picked image keeps its own colours, so drop the pack tint.
-        commitAll(mapOf(pkg to 0))
-        true
-    }.getOrDefault(false)
 
     /** Applies one icon-pack entry (white silhouette + pack tint). */
     fun applyPackIcon(pkg: String, icon: PackIcon): Boolean =
@@ -174,29 +161,4 @@ class ModuleRepository(private val context: Context) {
 
     private fun mirrorDir(): File = File(context.filesDir, "icons").apply { mkdirs() }
 
-    private fun decode(uri: Uri): Bitmap? = runCatching {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri)) { decoder, _, _ ->
-                decoder.isMutableRequired = true
-                decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
-            }
-        } else {
-            context.contentResolver.openInputStream(uri)?.use(BitmapFactory::decodeStream)
-        }
-    }.getOrNull()
-
-    /** Square, 192px, transparent PNG — cheap for SystemUI to decode. */
-    private fun normalize(source: Bitmap): ByteArray {
-        val scaled = Bitmap.createScaledBitmap(source, ICON_SIZE, ICON_SIZE, true)
-        return ByteArrayOutputStream().use { out ->
-            scaled.compress(Bitmap.CompressFormat.PNG, 100, out)
-            if (scaled !== source) scaled.recycle()
-            source.recycle()
-            out.toByteArray()
-        }
-    }
-
-    private companion object {
-        const val ICON_SIZE = 192
-    }
 }

@@ -4,7 +4,6 @@ import android.app.Application
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.net.Uri
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
@@ -22,16 +21,18 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/**
+ * Only apps the bundled pack actually covers are listed — an app without a pack glyph
+ * has nothing to adapt, so it would just be noise.
+ */
 data class AppEntry(
     val packageName: String,
     val label: String,
-    /** The app's own launcher icon. */
+    /** The app's own launcher icon, shown while a fix is disabled. */
     val icon: ImageBitmap,
-    /** Icon-pack glyph, or null when the pack has no entry for this app. */
-    val packIcon: ImageBitmap? = null,
-) {
-    val adapted: Boolean get() = packIcon != null
-}
+    /** The pack glyph shown in the list and used by the hook. */
+    val packIcon: ImageBitmap,
+)
 
 data class UiState(
     val loading: Boolean = true,
@@ -39,7 +40,6 @@ data class UiState(
     val masterEnabled: Boolean = false,
     val enabledApps: Set<String> = emptySet(),
     val apps: List<AppEntry> = emptyList(),
-    val packInstalled: Int = 0,
     val frameworkName: String? = null,
     val frameworkVersion: String? = null,
     val apiVersion: Int? = null,
@@ -73,7 +73,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     masterEnabled = repo.masterEnabled(),
                     enabledApps = repo.enabledApps(),
                     apps = apps,
-                    packInstalled = apps.count { app -> app.adapted },
                     frameworkName = repo.frameworkName,
                     frameworkVersion = repo.frameworkVersion,
                     apiVersion = repo.apiVersion,
@@ -81,8 +80,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 )
             }
 
-            // First launch after installing the module: adapt every installed app the
-            // pack knows about, so the module works without picking images by hand.
+            // First launch after installing the module: adapt everything at once, so the
+            // module works without touching a single switch.
             seedPackIfNeeded(pack)
         }
     }
@@ -95,50 +94,34 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setAppEnabled(pkg: String, enabled: Boolean) {
         if (enabled) {
-            // Re-enabling a pack app must re-install the pack glyph, not just the flag.
-            val entry = _state.value.apps.firstOrNull { it.packageName == pkg }
-            if (entry?.adapted == true) {
-                usePackIcon(pkg)
-                return
-            }
+            usePackIcon(pkg)
+            return
         }
-        repo.setAppEnabled(pkg, enabled)
-        _state.update {
-            it.copy(enabledApps = if (enabled) it.enabledApps + pkg else it.enabledApps - pkg)
-        }
+        repo.setAppEnabled(pkg, false)
+        _state.update { it.copy(enabledApps = it.enabledApps - pkg) }
     }
 
-    /** (Re)applies the bundled pack glyph for one app. */
-    fun usePackIcon(pkg: String) {
-        viewModelScope.launch {
-            val icon = withContext(Dispatchers.IO) {
-                IconPack.load(getApplication()).get(pkg)?.takeIf { repo.applyPackIcon(pkg, it) }
-            }
-            if (icon != null) {
-                _state.update {
-                    it.copy(
-                        enabledApps = it.enabledApps + pkg,
-                        iconRevision = repo.iconRevision(),
-                    )
-                }
-            } else {
-                _state.update { it.copy(message = getString(R.string.saved_failed)) }
-            }
-        }
-    }
-
-    /** Applies the pack to every installed app that has an entry (manual re-scan). */
-    fun reapplyPack() {
+    /** One-tap apply: writes the pack glyph for every installed app that has an entry. */
+    fun applyAll() {
         viewModelScope.launch {
             val applied = withContext(Dispatchers.IO) { applyPack() }
-            refresh()
-            _state.update { it.copy(message = getString(R.string.pack_applied, applied)) }
+            _state.update {
+                it.copy(
+                    masterEnabled = repo.masterEnabled(),
+                    enabledApps = repo.enabledApps(),
+                    iconRevision = repo.iconRevision(),
+                    message = getString(R.string.pack_applied, applied),
+                )
+            }
         }
     }
 
-    fun saveIcon(pkg: String, uri: Uri) {
+    /** (Re)applies the pack glyph for a single app. */
+    fun usePackIcon(pkg: String) {
         viewModelScope.launch {
-            val ok = withContext(Dispatchers.IO) { repo.saveIcon(pkg, uri) }
+            val ok = withContext(Dispatchers.IO) {
+                IconPack.load(getApplication()).get(pkg)?.let { repo.applyPackIcon(pkg, it) } ?: false
+            }
             if (ok) {
                 _state.update {
                     it.copy(
@@ -147,11 +130,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 }
             } else {
-                _state.update { it.copy(message = getString(R.string.saved_failed)) }
+                _state.update { it.copy(message = getString(R.string.apply_failed)) }
             }
         }
     }
 
+    /** Drops the page-provided icon and lets the app's own icon come back. */
     fun resetIcon(pkg: String) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) { repo.deleteIcon(pkg) }
@@ -164,7 +148,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    suspend fun previewIcon(pkg: String): ImageBitmap? = withContext(Dispatchers.IO) {
+    /** Currently applied glyph (pack or otherwise), for the detail sheet preview. */
+    suspend fun appliedIcon(pkg: String): ImageBitmap? = withContext(Dispatchers.IO) {
         repo.loadLocalIcon(pkg)?.asImageBitmap()
     }
 
@@ -227,15 +212,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return pm.getInstalledApplications(PackageManager.GET_META_DATA)
             .asSequence()
             .filter { it.packageName != context.packageName }
-            .map { info ->
+            .mapNotNull { info ->
+                val entry = pack.get(info.packageName) ?: return@mapNotNull null
+                val glyph = entry.bitmap()?.asImageBitmap() ?: return@mapNotNull null
                 AppEntry(
                     packageName = info.packageName,
                     label = pm.getApplicationLabel(info).toString(),
                     icon = loadAppIcon(pm, info),
-                    packIcon = pack.get(info.packageName)?.bitmap()?.asImageBitmap(),
+                    packIcon = glyph,
                 )
             }
-            .sortedWith(compareBy({ !it.adapted }, { it.label.lowercase() }))
+            .sortedBy { it.label.lowercase() }
             .toList()
     }
 

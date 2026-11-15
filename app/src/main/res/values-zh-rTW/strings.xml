@@ -7,25 +7,22 @@
 
     <string name="section_fix">圖示修復</string>
     <string name="master_enabled">通知圖示修復</string>
-    <string name="pack_summary">圖示包已適配 %1$d 個已安裝應用</string>
+    <string name="pack_summary">圖示包覆蓋 %1$d 個已安裝應用</string>
     <string name="pack_source">圖示來自 fankes 的 AndroidNotifyIconAdapt（AGPL-3.0）</string>
-    <string name="pack_reapply">重新套用</string>
-    <string name="pack_entry">已適配圖示包</string>
-    <string name="pack_missing">圖示包暫無此應用</string>
+    <string name="pack_empty">已安裝的應用暫時都不在圖示包裡。</string>
     <string name="pack_applied">已為 %1$d 個應用套用圖示包</string>
+    <string name="apply_failed">圖示套用失敗，請確認 LSPosed 服務已連線後重試。</string>
+    <string name="action_apply_all">一鍵套用（%1$d）</string>
     <string name="search_hint">搜尋應用</string>
 
     <string name="service_unavailable">未連線到 LSPosed 服務</string>
     <string name="service_unavailable_desc">請確認模組已在 LSPosed 中啟用，並授予 com.android.systemui 作用域。</string>
 
     <string name="icon_section">對此應用生效</string>
-    <string name="icon_custom">正在使用自訂圖片</string>
+    <string name="icon_supporting">用圖示包中的圖示替換 %1$s 的通知圖示。</string>
     <string name="action_use_pack">使用圖示包</string>
-    <string name="action_choose_icon">自選圖片</string>
     <string name="action_reset_icon">恢復應用圖示</string>
-    <string name="choose_icon_hint">圖示包圖示會自動生效；自選圖片會覆蓋圖示包。</string>
 
-    <string name="saved_failed">圖示儲存失敗，請換一張圖片試試。</string>
     <string name="scope_ok">作用域已新增，重啟 SystemUI 後生效。</string>
     <string name="scope_failed">作用域申請失敗：%1$s</string>
 

@@ -97,13 +97,12 @@ fun AppRoot(viewModel: MainViewModel = viewModel()) {
             Tab.Apps -> AppListScreen(
                 state = state,
                 onRefresh = viewModel::refresh,
-                onReapplyPack = viewModel::reapplyPack,
+                onApplyAll = viewModel::applyAll,
                 onToggleMaster = viewModel::setMasterEnabled,
                 onToggleApp = viewModel::setAppEnabled,
                 onUsePackIcon = viewModel::usePackIcon,
-                onSaveIcon = viewModel::saveIcon,
                 onResetIcon = viewModel::resetIcon,
-                loadPreview = viewModel::previewIcon,
+                loadAppliedIcon = viewModel::appliedIcon,
                 contentPadding = contentPadding,
             )
 
